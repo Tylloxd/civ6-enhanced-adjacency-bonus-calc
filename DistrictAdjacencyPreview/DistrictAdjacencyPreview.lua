@@ -317,6 +317,138 @@ function IsDistrictComplete(pPlot)
 end
 
 -- =============================================================================
+-- ADJACENCY RULES LOOKUP SYSTEM (Task 2.3)
+-- =============================================================================
+
+-- Enhanced lookup function for district adjacency bonuses
+function GetDistrictAdjacencyBonus(newDistrictType, existingDistrictType)
+    if newDistrictType == nil or existingDistrictType == nil then
+        return 0
+    end
+    
+    local baseNewType = GetBaseDistrictType(newDistrictType)
+    local baseExistingType = GetBaseDistrictType(existingDistrictType)
+    
+    -- Check the adjacency rules table
+    if DISTRICT_ADJACENCY_RULES[baseNewType] and DISTRICT_ADJACENCY_RULES[baseNewType][baseExistingType] then
+        return DISTRICT_ADJACENCY_RULES[baseNewType][baseExistingType]
+    end
+    
+    return 0
+end
+
+-- Get all adjacency bonuses that a new district would provide
+function GetAllAdjacencyBonuses(newDistrictType, adjacentDistrictTypes)
+    local bonuses = {}
+    
+    for _, existingType in ipairs(adjacentDistrictTypes) do
+        local bonus = GetDistrictAdjacencyBonus(newDistrictType, existingType)
+        if bonus > 0 then
+            table.insert(bonuses, {
+                targetDistrict = existingType,
+                bonus = bonus
+            })
+        end
+    end
+    
+    return bonuses
+end
+
+-- Check if a new district type provides any adjacency bonuses
+function DoesDistrictProvideAdjacency(districtType)
+    local baseType = GetBaseDistrictType(districtType)
+    return DISTRICT_ADJACENCY_RULES[baseType] ~= nil
+end
+
+-- Get all district types that a given district can provide bonuses to
+function GetDistrictTargets(districtType)
+    local baseType = GetBaseDistrictType(districtType)
+    local targets = {}
+    
+    if DISTRICT_ADJACENCY_RULES[baseType] then
+        for targetType, bonus in pairs(DISTRICT_ADJACENCY_RULES[baseType]) do
+            table.insert(targets, {
+                districtType = targetType,
+                bonus = bonus
+            })
+        end
+    end
+    
+    return targets
+end
+
+-- Get all district types that can provide bonuses to a given district
+function GetDistrictSources(targetDistrictType)
+    local baseTargetType = GetBaseDistrictType(targetDistrictType)
+    local sources = {}
+    
+    for sourceType, rules in pairs(DISTRICT_ADJACENCY_RULES) do
+        if rules[baseTargetType] then
+            table.insert(sources, {
+                districtType = sourceType,
+                bonus = rules[baseTargetType]
+            })
+        end
+    end
+    
+    return sources
+end
+
+-- Validate adjacency rules consistency (for debugging)
+function ValidateAdjacencyRules()
+    print("Validating adjacency rules...")
+    local ruleCount = 0
+    
+    for sourceType, rules in pairs(DISTRICT_ADJACENCY_RULES) do
+        for targetType, bonus in pairs(rules) do
+            ruleCount = ruleCount + 1
+            if bonus <= 0 then
+                print("WARNING: Non-positive bonus found:", sourceType, "->", targetType, "=", bonus)
+            end
+        end
+    end
+    
+    print("Validated", ruleCount, "adjacency rules")
+    return ruleCount
+end
+
+-- Get readable district name for display
+function GetDistrictDisplayName(districtType)
+    local baseType = GetBaseDistrictType(districtType)
+    
+    -- Map district types to display names
+    local displayNames = {
+        ["DISTRICT_CAMPUS"] = "Campus",
+        ["DISTRICT_THEATER"] = "Theater Square",
+        ["DISTRICT_COMMERCIAL_HUB"] = "Commercial Hub",
+        ["DISTRICT_HARBOR"] = "Harbor",
+        ["DISTRICT_INDUSTRIAL_ZONE"] = "Industrial Zone",
+        ["DISTRICT_HOLY_SITE"] = "Holy Site",
+        ["DISTRICT_GOVERNMENT"] = "Government Plaza",
+        ["DISTRICT_ENTERTAINMENT_COMPLEX"] = "Entertainment Complex",
+        ["DISTRICT_WATER_ENTERTAINMENT_COMPLEX"] = "Water Park",
+        ["DISTRICT_AQUEDUCT"] = "Aqueduct",
+        ["DISTRICT_DAM"] = "Dam",
+        ["DISTRICT_CANAL"] = "Canal"
+    }
+    
+    -- Check for unique districts
+    if districtType == "DISTRICT_HANSA" then
+        return "Hansa"
+    elseif districtType == "DISTRICT_ROYAL_NAVY_DOCKYARD" then
+        return "Royal Navy Dockyard"
+    elseif districtType == "DISTRICT_SUGUBA" then
+        return "Suguba"
+    elseif districtType == "DISTRICT_LAVRA" then
+        return "Lavra"
+    elseif districtType == "DISTRICT_MBANZA" then
+        return "Mbanza"
+    end
+    
+    return displayNames[baseType] or baseType
+end
+
+-- =============================================================================
 -- EVENT HANDLERS
 -- =============================================================================
 
