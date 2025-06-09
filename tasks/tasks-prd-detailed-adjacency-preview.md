@@ -4,11 +4,11 @@
 
 - `DetailedAdjacencyPreview.modinfo` - ✅ CREATED - Mod definition file containing metadata, dependencies, and configuration.
 - `Scripts/DetailedAdjacencyPreview_Core.lua` - ✅ CREATED - Core adjacency calculation engine with data structures and benefit calculation functions.
+- `Scripts/DetailedAdjacencyPreview_Utils.lua` - ✅ CREATED - Caching system and performance optimization utilities with statistics tracking.
 - `Data/DetailedAdjacencyPreview_Config.xml` - Configuration settings for the mod including visual styling parameters.
 - `Data/DetailedAdjacencyPreview_Districts.xml` - District type definitions and adjacency rule mappings.
 - `UI/DetailedAdjacencyPreview.lua` - Main Lua script handling UI integration and overlay display logic.
 - `UI/DetailedAdjacencyPreview.xml` - UI context definitions and event bindings for the overlay system.
-- `Scripts/DetailedAdjacencyPreview_Utils.lua` - Utility functions for data processing and caching.
 - `Localization/DetailedAdjacencyPreview_Text.xml` - Text strings for UI elements (if needed for debugging/options).
 - `Assets/DetailedAdjacencyPreview_Icons.dds` - Custom icon assets for benefit type symbols (if needed).
 
@@ -33,8 +33,8 @@
 - [ ] 2.0 Create Core Adjacency Calculation System
   - [x] 2.1 Research and document Civilization VI's existing adjacency rule system
   - [x] 2.2 Create data structure mapping district types to their adjacency benefits
-  - [ ] 2.3 Implement function to calculate adjacency benefits for existing districts
-  - [ ] 2.4 Create caching system to optimize repeated calculations
+  - [x] 2.3 Implement function to calculate adjacency benefits for existing districts
+  - [x] 2.4 Create caching system to optimize repeated calculations
   - [ ] 2.5 Add support for all base game district types
   - [ ] 2.6 Add support for DLC district types (Government Plaza, Diplomatic Quarter, etc.)
   - [ ] 2.7 Add support for unique civilization districts
