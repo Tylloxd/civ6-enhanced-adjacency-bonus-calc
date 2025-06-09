@@ -15,7 +15,7 @@
     
     <!-- UI Text -->
     <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_BONUS_FORMAT">
-      <Text>+{1_num}</Text>
+      <Text>+{1}</Text>
     </Row>
     <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_NO_BONUS">
       <Text>+0</Text>
@@ -26,7 +26,7 @@
       <Text>Adjacency Bonus Preview</Text>
     </Row>
     <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_TOOLTIP_DESCRIPTION">
-      <Text>This {1_districtName} would provide {2_bonusAmount} adjacency bonus to the existing {3_existingDistrict}.</Text>
+      <Text>This {1} would provide {2} adjacency bonus to the existing {3}.</Text>
     </Row>
     
     <!-- Debug Messages -->
