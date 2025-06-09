@@ -95,6 +95,62 @@ local UNIQUE_DISTRICT_REPLACEMENTS = {
 }
 
 -- =============================================================================
+-- CIVILIZATION-SPECIFIC DISTRICT SUPPORT (Task 2.5)
+-- =============================================================================
+
+-- Enhanced civilization-specific district replacements with additional metadata
+local CIVILIZATION_DISTRICTS = {
+    ["CIVILIZATION_GERMANY"] = {
+        ["DISTRICT_HANSA"] = {
+            replaces = "DISTRICT_INDUSTRIAL_ZONE",
+            bonusRules = {
+                -- Hansa gets additional +1 Production from adjacent Commercial Hubs
+                ["DISTRICT_COMMERCIAL_HUB"] = 1,
+                -- Hansa gets +2 Production from adjacent Resources
+                -- (handled separately as this involves terrain, not districts)
+            }
+        }
+    },
+    ["CIVILIZATION_ENGLAND"] = {
+        ["DISTRICT_ROYAL_NAVY_DOCKYARD"] = {
+            replaces = "DISTRICT_HARBOR",
+            bonusRules = {
+                -- Royal Navy Dockyard gets standard Harbor bonuses
+                -- Plus movement bonuses (not adjacency related)
+            }
+        }
+    },
+    ["CIVILIZATION_MALI"] = {
+        ["DISTRICT_SUGUBA"] = {
+            replaces = "DISTRICT_COMMERCIAL_HUB",
+            bonusRules = {
+                -- Suguba gets additional Gold from adjacent Holy Sites and Rivers
+                ["DISTRICT_HOLY_SITE"] = 1,
+                -- River bonus handled separately
+            }
+        }
+    },
+    ["CIVILIZATION_RUSSIA"] = {
+        ["DISTRICT_LAVRA"] = {
+            replaces = "DISTRICT_HOLY_SITE",
+            bonusRules = {
+                -- Lavra gets Faith from adjacent districts (same as Holy Site)
+                -- Plus territory expansion bonuses (not adjacency related)
+            }
+        }
+    },
+    ["CIVILIZATION_KONGO"] = {
+        ["DISTRICT_MBANZA"] = {
+            replaces = "DISTRICT_NEIGHBORHOOD",
+            bonusRules = {
+                -- Mbanza provides Housing and Food
+                -- Different mechanics than standard adjacency
+            }
+        }
+    }
+}
+
+-- =============================================================================
 -- CORE FUNCTIONS
 -- =============================================================================
 
@@ -480,7 +536,7 @@ end
 -- =============================================================================
 
 -- Calculate the total adjacency bonus a new district would provide to existing districts
-function CalculateDistrictAdjacencyBonuses(newDistrictType, placementX, placementY)
+function CalculateDistrictAdjacencyBonuses(newDistrictType, placementX, placementY, playerID)
     local adjacencyBonuses = {}
     local totalBonus = 0
     
@@ -490,7 +546,7 @@ function CalculateDistrictAdjacencyBonuses(newDistrictType, placementX, placemen
     for _, districtData in ipairs(adjacentDistricts) do
         -- Only count completed districts
         if IsDistrictComplete(districtData.plot) then
-            local bonus = GetDistrictAdjacencyBonus(newDistrictType, districtData.districtType)
+            local bonus = GetDistrictAdjacencyBonusWithCiv(newDistrictType, districtData.districtType, playerID)
             
             if bonus > 0 then
                 table.insert(adjacencyBonuses, {
@@ -512,12 +568,12 @@ function CalculateDistrictAdjacencyBonuses(newDistrictType, placementX, placemen
 end
 
 -- Calculate adjacency for a specific plot and district type
-function CalculateAdjacencyForPlacement(districtType, plotX, plotY)
+function CalculateAdjacencyForPlacement(districtType, plotX, plotY, playerID)
     if districtType == nil or plotX == nil or plotY == nil then
         return {}, 0
     end
     
-    local bonuses, total = CalculateDistrictAdjacencyBonuses(districtType, plotX, plotY)
+    local bonuses, total = CalculateDistrictAdjacencyBonuses(districtType, plotX, plotY, playerID)
     
     print("Placement analysis for", GetDistrictDisplayName(districtType), "at", plotX, plotY, "- Total bonus:", total)
     
@@ -525,7 +581,7 @@ function CalculateAdjacencyForPlacement(districtType, plotX, plotY)
 end
 
 -- Get adjacency preview data for UI display
-function GetAdjacencyPreviewData(districtType, placementX, placementY)
+function GetAdjacencyPreviewData(districtType, placementX, placementY, playerID)
     local previewData = {
         districtType = districtType,
         placementX = placementX,
@@ -535,7 +591,7 @@ function GetAdjacencyPreviewData(districtType, placementX, placementY)
         hasAnyBonus = false
     }
     
-    local bonuses, total = CalculateAdjacencyForPlacement(districtType, placementX, placementY)
+    local bonuses, total = CalculateAdjacencyForPlacement(districtType, placementX, placementY, playerID)
     
     previewData.bonuses = bonuses
     previewData.totalBonus = total
@@ -614,6 +670,139 @@ function DebugAdjacencyCalculation(districtType, plotX, plotY)
     print("===================================")
     
     return previewData
+end
+
+-- =============================================================================
+-- CIVILIZATION-SPECIFIC DISTRICT SUPPORT (Task 2.5)
+-- =============================================================================
+
+-- Get the current player's civilization type
+function GetPlayerCivilization(playerID)
+    local pPlayer = Players[playerID]
+    if pPlayer == nil then
+        return nil
+    end
+    
+    local playerConfig = PlayerConfigurations[playerID]
+    if playerConfig == nil then
+        return nil
+    end
+    
+    local civTypeID = playerConfig:GetCivilizationTypeID()
+    if civTypeID == -1 then
+        return nil
+    end
+    
+    local civInfo = GameInfo.Civilizations[civTypeID]
+    if civInfo then
+        return civInfo.CivilizationType
+    end
+    
+    return nil
+end
+
+-- Check if a district is a unique district for the current civilization
+function IsUniqueDistrictForCivilization(districtType, civilizationType)
+    if not civilizationType or not CIVILIZATION_DISTRICTS[civilizationType] then
+        return false
+    end
+    
+    return CIVILIZATION_DISTRICTS[civilizationType][districtType] ~= nil
+end
+
+-- Get civilization-specific adjacency bonus (if different from standard)
+function GetCivilizationSpecificBonus(civType, newDistrictType, existingDistrictType)
+    if not civType or not CIVILIZATION_DISTRICTS[civType] then
+        return 0
+    end
+    
+    local districtData = CIVILIZATION_DISTRICTS[civType][newDistrictType]
+    if not districtData or not districtData.bonusRules then
+        return 0
+    end
+    
+    local baseExistingType = GetBaseDistrictType(existingDistrictType)
+    return districtData.bonusRules[baseExistingType] or 0
+end
+
+-- Enhanced district adjacency bonus calculation with civilization support
+function GetDistrictAdjacencyBonusWithCiv(newDistrictType, existingDistrictType, playerID)
+    if newDistrictType == nil or existingDistrictType == nil then
+        return 0
+    end
+    
+    -- Get standard bonus first
+    local standardBonus = GetDistrictAdjacencyBonus(newDistrictType, existingDistrictType)
+    
+    -- Check for civilization-specific bonuses
+    local civType = GetPlayerCivilization(playerID or Game.GetLocalPlayer())
+    if civType then
+        local civBonus = GetCivilizationSpecificBonus(civType, newDistrictType, existingDistrictType)
+        if civBonus > 0 then
+            print("Civilization-specific bonus:", civBonus, "for", newDistrictType, "->", existingDistrictType)
+            return civBonus -- Use civ-specific bonus instead of standard
+        end
+    end
+    
+    return standardBonus
+end
+
+-- Get all unique districts available to a civilization
+function GetCivilizationUniqueDistricts(civilizationType)
+    if not civilizationType or not CIVILIZATION_DISTRICTS[civilizationType] then
+        return {}
+    end
+    
+    local uniqueDistricts = {}
+    for districtType, data in pairs(CIVILIZATION_DISTRICTS[civilizationType]) do
+        table.insert(uniqueDistricts, {
+            districtType = districtType,
+            replaces = data.replaces,
+            displayName = GetDistrictDisplayName(districtType)
+        })
+    end
+    
+    return uniqueDistricts
+end
+
+-- Check if a district type should be treated as its base type for adjacency calculations
+function ShouldUseBaseTypeForAdjacency(districtType, civilizationType)
+    -- Most unique districts use their base type's adjacency rules
+    -- Only return false if the unique district has completely different rules
+    
+    if not civilizationType or not CIVILIZATION_DISTRICTS[civilizationType] then
+        return true
+    end
+    
+    local districtData = CIVILIZATION_DISTRICTS[civilizationType][districtType]
+    if not districtData then
+        return true
+    end
+    
+    -- If the unique district has custom bonus rules, use those
+    return not districtData.bonusRules or table.isEmpty(districtData.bonusRules)
+end
+
+-- Validate unique district configuration (for debugging)
+function ValidateUniqueDistricts()
+    print("Validating unique district configurations...")
+    
+    for civType, districts in pairs(CIVILIZATION_DISTRICTS) do
+        print("Civilization:", civType)
+        for districtType, data in pairs(districts) do
+            print("  Unique District:", districtType, "replaces", data.replaces)
+            if data.bonusRules then
+                for target, bonus in pairs(data.bonusRules) do
+                    print("    Custom bonus:", target, "=", bonus)
+                end
+            end
+        end
+    end
+end
+
+-- Helper function to check if table is empty
+function table.isEmpty(t)
+    return next(t) == nil
 end
 
 -- =============================================================================
