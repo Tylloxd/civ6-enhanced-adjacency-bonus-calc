@@ -1087,8 +1087,283 @@ function CalculateDistrictAdjacencyBonusesCached(newDistrictType, placementX, pl
 end
 
 -- =============================================================================
--- INITIALIZATION
+-- TESTING AND VALIDATION FUNCTIONS (Task 4.0)
 -- =============================================================================
+
+-- Test all vanilla district types (Task 4.1)
+function TestVanillaDistricts()
+    print("=== Testing Vanilla District Types ===")
+    
+    local vanillaDistricts = {
+        "DISTRICT_CAMPUS",
+        "DISTRICT_THEATER",
+        "DISTRICT_COMMERCIAL_HUB", 
+        "DISTRICT_HARBOR",
+        "DISTRICT_INDUSTRIAL_ZONE",
+        "DISTRICT_HOLY_SITE",
+        "DISTRICT_GOVERNMENT",
+        "DISTRICT_ENTERTAINMENT_COMPLEX",
+        "DISTRICT_WATER_ENTERTAINMENT_COMPLEX",
+        "DISTRICT_AQUEDUCT",
+        "DISTRICT_DAM",
+        "DISTRICT_CANAL"
+    }
+    
+    local testResults = {}
+    
+    for _, districtType in ipairs(vanillaDistricts) do
+        local providesAdjacency = DoesDistrictProvideAdjacency(districtType)
+        local targets = GetDistrictTargets(districtType)
+        local displayName = GetDistrictDisplayName(districtType)
+        
+        testResults[districtType] = {
+            providesAdjacency = providesAdjacency,
+            targetCount = #targets,
+            displayName = displayName,
+            targets = targets
+        }
+        
+        print(string.format("  %s (%s): Provides adjacency: %s, Targets: %d", 
+            displayName, districtType, tostring(providesAdjacency), #targets))
+        
+        if #targets > 0 then
+            for _, target in ipairs(targets) do
+                print(string.format("    -> %s: +%d", GetDistrictDisplayName(target.districtType), target.bonus))
+            end
+        end
+    end
+    
+    print("=== Vanilla District Test Complete ===")
+    return testResults
+end
+
+-- Test civilization-specific districts (Task 4.2)
+function TestCivilizationDistricts()
+    print("=== Testing Civilization-Specific Districts ===")
+    
+    local uniqueDistricts = {
+        {type = "DISTRICT_HANSA", civ = "CIVILIZATION_GERMANY", replaces = "DISTRICT_INDUSTRIAL_ZONE"},
+        {type = "DISTRICT_ROYAL_NAVY_DOCKYARD", civ = "CIVILIZATION_ENGLAND", replaces = "DISTRICT_HARBOR"},
+        {type = "DISTRICT_SUGUBA", civ = "CIVILIZATION_MALI", replaces = "DISTRICT_COMMERCIAL_HUB"},
+        {type = "DISTRICT_LAVRA", civ = "CIVILIZATION_RUSSIA", replaces = "DISTRICT_HOLY_SITE"},
+        {type = "DISTRICT_MBANZA", civ = "CIVILIZATION_KONGO", replaces = "DISTRICT_NEIGHBORHOOD"}
+    }
+    
+    local testResults = {}
+    
+    for _, district in ipairs(uniqueDistricts) do
+        local baseType = GetBaseDistrictType(district.type)
+        local isUnique = IsUniqueDistrictForCivilization(district.type, district.civ)
+        local displayName = GetDistrictDisplayName(district.type)
+        local targets = GetDistrictTargets(district.type)
+        
+        testResults[district.type] = {
+            baseType = baseType,
+            isUnique = isUnique,
+            displayName = displayName,
+            civilization = district.civ,
+            replaces = district.replaces,
+            targetCount = #targets
+        }
+        
+        print(string.format("  %s (%s):", displayName, district.type))
+        print(string.format("    Base Type: %s", baseType))
+        print(string.format("    Is Unique: %s", tostring(isUnique)))
+        print(string.format("    Replaces: %s", district.replaces))
+        print(string.format("    Targets: %d", #targets))
+        
+        -- Test adjacency calculation with civilization context
+        if district.civ then
+            local testBonus = GetCivilizationSpecificBonus(district.civ, district.type, "DISTRICT_CAMPUS")
+            print(string.format("    Civ-specific bonus to Campus: %d", testBonus))
+        end
+    end
+    
+    print("=== Civilization District Test Complete ===")
+    return testResults
+end
+
+-- Verify adjacency bonus calculations (Task 4.3)
+function VerifyAdjacencyCalculations()
+    print("=== Verifying Adjacency Bonus Calculations ===")
+    
+    local testCases = {
+        {source = "DISTRICT_CAMPUS", target = "DISTRICT_THEATER", expected = 1},
+        {source = "DISTRICT_THEATER", target = "DISTRICT_CAMPUS", expected = 1},
+        {source = "DISTRICT_COMMERCIAL_HUB", target = "DISTRICT_HARBOR", expected = 2},
+        {source = "DISTRICT_HARBOR", target = "DISTRICT_COMMERCIAL_HUB", expected = 2},
+        {source = "DISTRICT_INDUSTRIAL_ZONE", target = "DISTRICT_AQUEDUCT", expected = 0}, -- Aqueduct provides TO Industrial Zone
+        {source = "DISTRICT_AQUEDUCT", target = "DISTRICT_INDUSTRIAL_ZONE", expected = 2},
+        {source = "DISTRICT_GOVERNMENT", target = "DISTRICT_CAMPUS", expected = 1},
+        {source = "DISTRICT_CAMPUS", target = "DISTRICT_GOVERNMENT", expected = 1}
+    }
+    
+    local passedTests = 0
+    local totalTests = #testCases
+    
+    for i, testCase in ipairs(testCases) do
+        local actualBonus = GetDistrictAdjacencyBonus(testCase.source, testCase.target)
+        local passed = actualBonus == testCase.expected
+        
+        if passed then
+            passedTests = passedTests + 1
+        end
+        
+        print(string.format("  Test %d: %s -> %s", i, 
+            GetDistrictDisplayName(testCase.source), 
+            GetDistrictDisplayName(testCase.target)))
+        print(string.format("    Expected: +%d, Actual: +%d, Result: %s", 
+            testCase.expected, actualBonus, passed and "PASS" or "FAIL"))
+    end
+    
+    local successRate = (passedTests / totalTests) * 100
+    print(string.format("=== Calculation Verification Complete: %d/%d tests passed (%.1f%%) ===", 
+        passedTests, totalTests, successRate))
+    
+    return {
+        passed = passedTests,
+        total = totalTests,
+        successRate = successRate,
+        allPassed = passedTests == totalTests
+    }
+end
+
+-- Test UI visibility and functionality (Task 4.4)
+function TestUIFunctionality()
+    print("=== Testing UI Functionality ===")
+    
+    local uiTests = {
+        {name = "UI Initialization", test = function() return g_IsUIInitialized end},
+        {name = "Bonus Number Manager", test = function() return g_BonusNumberManager ~= nil end},
+        {name = "Tooltip Manager", test = function() return g_TooltipManager ~= nil end},
+        {name = "Format Bonus Text", test = function() 
+            return FormatBonusText(3) == "+3" and FormatBonusText(0) == "+0" 
+        end},
+        {name = "Cache System", test = function() 
+            ClearAdjacencyCache()
+            local stats = GetCacheStatistics()
+            return stats.cacheSize == 0
+        end}
+    }
+    
+    local passedTests = 0
+    local totalTests = #uiTests
+    
+    for i, uiTest in ipairs(uiTests) do
+        local success, result = pcall(uiTest.test)
+        local passed = success and result
+        
+        if passed then
+            passedTests = passedTests + 1
+        end
+        
+        print(string.format("  UI Test %d: %s - %s", i, uiTest.name, passed and "PASS" or "FAIL"))
+        if not success then
+            print(string.format("    Error: %s", tostring(result)))
+        end
+    end
+    
+    local successRate = (passedTests / totalTests) * 100
+    print(string.format("=== UI Test Complete: %d/%d tests passed (%.1f%%) ===", 
+        passedTests, totalTests, successRate))
+    
+    return {
+        passed = passedTests,
+        total = totalTests,
+        successRate = successRate,
+        allPassed = passedTests == totalTests
+    }
+end
+
+-- Performance testing (Task 4.6)
+function TestPerformance()
+    print("=== Performance Testing ===")
+    
+    local startTime = os.clock()
+    
+    -- Test adjacency calculations
+    local calculationTests = 0
+    for i = 1, 100 do
+        local previewData = GetAdjacencyPreviewData("DISTRICT_CAMPUS", i % 50, i % 50, 0)
+        calculationTests = calculationTests + 1
+    end
+    
+    local calculationTime = os.clock() - startTime
+    
+    -- Test cache performance
+    startTime = os.clock()
+    local cacheTests = 0
+    for i = 1, 100 do
+        local previewData = GetCachedAdjacencyPreviewData("DISTRICT_CAMPUS", i % 10, i % 10, 0)
+        cacheTests = cacheTests + 1
+    end
+    
+    local cacheTime = os.clock() - startTime
+    local cacheStats = GetCacheStatistics()
+    
+    print(string.format("  Calculation Performance: %d tests in %.3f seconds (%.3f ms per test)", 
+        calculationTests, calculationTime, (calculationTime / calculationTests) * 1000))
+    print(string.format("  Cache Performance: %d tests in %.3f seconds (%.3f ms per test)", 
+        cacheTests, cacheTime, (cacheTime / cacheTests) * 1000))
+    print(string.format("  Cache Hit Rate: %.1f%% (%d hits, %d misses)", 
+        cacheStats.hitRate, cacheStats.hits, cacheStats.misses))
+    
+    return {
+        calculationTime = calculationTime,
+        cacheTime = cacheTime,
+        cacheHitRate = cacheStats.hitRate,
+        performanceGood = calculationTime < 1.0 and cacheTime < 0.5
+    }
+end
+
+-- Comprehensive test suite (Task 4.8)
+function RunComprehensiveTests()
+    print("========================================")
+    print("DISTRICT ADJACENCY PREVIEW - TEST SUITE")
+    print("========================================")
+    
+    local testResults = {}
+    
+    -- Run all test categories
+    testResults.vanilla = TestVanillaDistricts()
+    testResults.civilization = TestCivilizationDistricts()
+    testResults.calculations = VerifyAdjacencyCalculations()
+    testResults.ui = TestUIFunctionality()
+    testResults.performance = TestPerformance()
+    
+    -- Validate adjacency rules
+    local ruleCount = ValidateAdjacencyRules()
+    testResults.ruleValidation = {ruleCount = ruleCount, valid = ruleCount > 0}
+    
+    -- Print cache statistics
+    PrintCacheStatistics()
+    
+    -- Overall summary
+    print("========================================")
+    print("TEST SUMMARY")
+    print("========================================")
+    print(string.format("Adjacency Calculations: %s (%d/%d passed)", 
+        testResults.calculations.allPassed and "PASS" or "FAIL",
+        testResults.calculations.passed, testResults.calculations.total))
+    print(string.format("UI Functionality: %s (%d/%d passed)", 
+        testResults.ui.allPassed and "PASS" or "FAIL",
+        testResults.ui.passed, testResults.ui.total))
+    print(string.format("Performance: %s", 
+        testResults.performance.performanceGood and "GOOD" or "NEEDS IMPROVEMENT"))
+    print(string.format("Rule Validation: %s (%d rules)", 
+        testResults.ruleValidation.valid and "PASS" or "FAIL",
+        testResults.ruleValidation.ruleCount))
+    
+    local overallSuccess = testResults.calculations.allPassed and 
+                          testResults.ui.allPassed and 
+                          testResults.performance.performanceGood and 
+                          testResults.ruleValidation.valid
+    
+    print(string.format("OVERALL RESULT: %s", overallSuccess and "ALL TESTS PASSED" or "SOME TESTS FAILED"))
+    print("========================================")
+    
+    return testResults
+end
 
 -- Initialize the mod when loaded
 Initialize() 
