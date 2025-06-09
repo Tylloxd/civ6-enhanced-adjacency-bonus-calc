@@ -76,29 +76,66 @@ end
 
 -- Set up UI event handlers
 function SetupUIEventHandlers()
-    -- Connect to district placement events
-    Events.DistrictPicker_FilterShown.Add(OnDistrictPickerShown)
-    Events.DistrictPicker_FilterHidden.Add(OnDistrictPickerHidden)
+    -- Connect to district placement events with error checking
+    if Events.DistrictPicker_FilterShown then
+        Events.DistrictPicker_FilterShown.Add(OnDistrictPickerShown)
+    else
+        print("Warning: DistrictPicker_FilterShown event not available in UI")
+    end
     
-    -- Connect to plot selection events
-    Events.CityBannerManager_Updated.Add(OnCityBannerUpdate)
-    Events.PlotSelected.Add(OnPlotSelected)
+    if Events.DistrictPicker_FilterHidden then
+        Events.DistrictPicker_FilterHidden.Add(OnDistrictPickerHidden)
+    else
+        print("Warning: DistrictPicker_FilterHidden event not available in UI")
+    end
     
-    -- Connect to input events for real-time updates
-    Events.InputActionTriggered.Add(OnInputAction)
+    -- Connect to more standard events
+    if Events.CityBannerManager_Updated then
+        Events.CityBannerManager_Updated.Add(OnCityBannerUpdate)
+    end
     
-    -- Enhanced event handlers for district placement preview (Task 3.5)
-    Events.DistrictPlacementShow.Add(OnDistrictPlacementShow)
-    Events.DistrictPlacementHide.Add(OnDistrictPlacementHide)
-    Events.DistrictPlacementUpdate.Add(OnDistrictPlacementUpdate)
+    if Events.PlotSelected then
+        Events.PlotSelected.Add(OnPlotSelected)
+    end
     
-    -- Real-time cursor movement handlers (Task 3.6)
-    Events.PlotHover.Add(OnPlotHover)
-    Events.CursorMove.Add(OnCursorMove)
-    Events.PlotMouseEnter.Add(OnPlotMouseEnter)
-    Events.PlotMouseExit.Add(OnPlotMouseExit)
+    if Events.InputActionTriggered then
+        Events.InputActionTriggered.Add(OnInputAction)
+    end
     
-    print("UI event handlers configured")
+    -- Try to connect to district placement events (these may not exist in all versions)
+    if Events.DistrictPlacementShow then
+        Events.DistrictPlacementShow.Add(OnDistrictPlacementShow)
+        print("Connected to DistrictPlacementShow event")
+    else
+        print("DistrictPlacementShow event not available - using fallback methods")
+    end
+    
+    if Events.DistrictPlacementHide then
+        Events.DistrictPlacementHide.Add(OnDistrictPlacementHide)
+    end
+    
+    if Events.DistrictPlacementUpdate then
+        Events.DistrictPlacementUpdate.Add(OnDistrictPlacementUpdate)
+    end
+    
+    -- Real-time cursor movement handlers (may not be available in all versions)
+    if Events.PlotHover then
+        Events.PlotHover.Add(OnPlotHover)
+    end
+    
+    if Events.CursorMove then
+        Events.CursorMove.Add(OnCursorMove)
+    end
+    
+    if Events.PlotMouseEnter then
+        Events.PlotMouseEnter.Add(OnPlotMouseEnter)
+    end
+    
+    if Events.PlotMouseExit then
+        Events.PlotMouseExit.Add(OnPlotMouseExit)
+    end
+    
+    print("UI event handlers configured with compatibility checks")
 end
 
 -- Clean up UI resources

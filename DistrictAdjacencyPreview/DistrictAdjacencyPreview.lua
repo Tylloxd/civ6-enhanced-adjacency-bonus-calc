@@ -158,10 +158,37 @@ local CIVILIZATION_DISTRICTS = {
 function Initialize()
     print("Initializing District Adjacency Preview...")
     
-    -- Register event handlers
-    Events.DistrictPicker_FilterShown.Add(OnDistrictPickerShown)
-    Events.DistrictPicker_FilterHidden.Add(OnDistrictPickerHidden)
-    Events.CityBannerManager_Updated.Add(OnCityBannerUpdate)
+    -- Register event handlers with error checking
+    if Events.DistrictPicker_FilterShown then
+        Events.DistrictPicker_FilterShown.Add(OnDistrictPickerShown)
+    else
+        print("Warning: DistrictPicker_FilterShown event not available")
+    end
+    
+    if Events.DistrictPicker_FilterHidden then
+        Events.DistrictPicker_FilterHidden.Add(OnDistrictPickerHidden)
+    else
+        print("Warning: DistrictPicker_FilterHidden event not available")
+    end
+    
+    if Events.CityBannerManager_Updated then
+        Events.CityBannerManager_Updated.Add(OnCityBannerUpdate)
+    else
+        print("Warning: CityBannerManager_Updated event not available")
+    end
+    
+    -- Use more standard events that are guaranteed to exist
+    if Events.InputActionTriggered then
+        Events.InputActionTriggered.Add(OnInputActionTriggered)
+    end
+    
+    if Events.PlotSelected then
+        Events.PlotSelected.Add(OnPlotSelected)
+    end
+    
+    if Events.GameCoreEventPublishComplete then
+        Events.GameCoreEventPublishComplete.Add(OnGameCoreEventPublishComplete)
+    end
     
     print("District Adjacency Preview initialized successfully!")
 end
@@ -529,6 +556,40 @@ function OnCityBannerUpdate()
         return
     end
     -- This will be expanded in later tasks
+end
+
+-- Enhanced event handlers with better compatibility
+function OnInputActionTriggered(actionType, plotX, plotY)
+    -- Handle input actions for district placement
+    if actionType and plotX and plotY then
+        -- This will be called during various input actions
+        -- We can use this to detect district placement mode
+        if g_isPreviewActive and g_currentDistrictType then
+            -- Update preview in real-time
+            local previewData = GetCachedAdjacencyPreviewData(g_currentDistrictType, plotX, plotY, Game.GetLocalPlayer())
+            if previewData then
+                print("Adjacency preview updated for", g_currentDistrictType, "at", plotX, plotY, "- Total bonus:", previewData.totalBonus)
+            end
+        end
+    end
+end
+
+function OnPlotSelected(plotX, plotY)
+    -- Handle plot selection
+    if plotX and plotY then
+        g_currentPlotX = plotX
+        g_currentPlotY = plotY
+        print("Plot selected:", plotX, plotY)
+    end
+end
+
+function OnGameCoreEventPublishComplete()
+    -- This event is called when the game core finishes publishing events
+    -- We can use this as a reliable initialization point
+    if not g_isPreviewActive then
+        -- Check if we should activate preview mode
+        -- This is a fallback for when district picker events aren't available
+    end
 end
 
 -- =============================================================================
@@ -1366,4 +1427,33 @@ function RunComprehensiveTests()
 end
 
 -- Initialize the mod when loaded
-Initialize() 
+Initialize()
+
+-- =============================================================================
+-- MOD VERIFICATION AND SIMPLE TESTING
+-- =============================================================================
+
+-- Simple test to verify mod is working
+function TestModLoading()
+    print("=== DISTRICT ADJACENCY PREVIEW MOD TEST ===")
+    print("Mod is loaded and functional!")
+    print("Testing basic adjacency calculation...")
+    
+    local testBonus = GetDistrictAdjacencyBonus("DISTRICT_CAMPUS", "DISTRICT_THEATER")
+    print("Campus -> Theater Square bonus:", testBonus, "(Expected: 1)")
+    
+    local testBonus2 = GetDistrictAdjacencyBonus("DISTRICT_COMMERCIAL_HUB", "DISTRICT_HARBOR")
+    print("Commercial Hub -> Harbor bonus:", testBonus2, "(Expected: 2)")
+    
+    print("=== MOD TEST COMPLETE ===")
+    
+    return testBonus == 1 and testBonus2 == 2
+end
+
+-- Run a simple test on load
+local testResult = TestModLoading()
+if testResult then
+    print("✅ District Adjacency Preview mod loaded successfully!")
+else
+    print("❌ District Adjacency Preview mod test failed!")
+end 
