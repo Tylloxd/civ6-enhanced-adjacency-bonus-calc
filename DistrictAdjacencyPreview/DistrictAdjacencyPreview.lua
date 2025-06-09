@@ -806,6 +806,133 @@ function table.isEmpty(t)
 end
 
 -- =============================================================================
+-- ADJACENCY BONUS COMBINATION SYSTEM (Task 2.6)
+-- =============================================================================
+
+-- Combine multiple adjacency bonuses into a single total for a placement
+function CombineAdjacencyBonuses(bonusList)
+    local totalBonus = 0
+    local bonusBreakdown = {}
+    
+    for _, bonusData in ipairs(bonusList) do
+        totalBonus = totalBonus + bonusData.bonus
+        table.insert(bonusBreakdown, {
+            source = bonusData.displayName,
+            bonus = bonusData.bonus,
+            coordinates = bonusData.x .. "," .. bonusData.y
+        })
+    end
+    
+    return totalBonus, bonusBreakdown
+end
+
+-- Get combined bonus value for display on a specific plot
+function GetCombinedBonusForPlot(districtType, plotX, plotY, playerID)
+    local previewData = GetAdjacencyPreviewData(districtType, plotX, plotY, playerID)
+    
+    if not previewData.hasAnyBonus then
+        return 0, {}
+    end
+    
+    return CombineAdjacencyBonuses(previewData.bonuses)
+end
+
+-- Create a summary of all adjacency bonuses for a placement
+function CreateAdjacencySummary(districtType, plotX, plotY, playerID)
+    local summary = {
+        placementLocation = {x = plotX, y = plotY},
+        districtType = districtType,
+        districtDisplayName = GetDistrictDisplayName(districtType),
+        totalBonus = 0,
+        bonusCount = 0,
+        affectedDistricts = {},
+        isEmpty = true
+    }
+    
+    local previewData = GetAdjacencyPreviewData(districtType, plotX, plotY, playerID)
+    
+    if previewData.hasAnyBonus then
+        summary.totalBonus = previewData.totalBonus
+        summary.bonusCount = #previewData.bonuses
+        summary.affectedDistricts = previewData.bonuses
+        summary.isEmpty = false
+        
+        -- Create formatted text for display
+        summary.displayText = FormatBonusText(summary.totalBonus)
+        summary.tooltipText = string.format(
+            "%s would provide %s total adjacency bonus to %d adjacent district%s",
+            summary.districtDisplayName,
+            FormatBonusText(summary.totalBonus),
+            summary.bonusCount,
+            summary.bonusCount == 1 and "" or "s"
+        )
+    else
+        summary.displayText = FormatBonusText(0)
+        summary.tooltipText = string.format(
+            "%s would not provide any adjacency bonuses at this location",
+            summary.districtDisplayName
+        )
+    end
+    
+    return summary
+end
+
+-- Combine bonuses by district type (for cases where multiple of same district are adjacent)
+function CombineBonusesByDistrictType(bonusList)
+    local combinedBonuses = {}
+    local totalBonus = 0
+    
+    for _, bonusData in ipairs(bonusList) do
+        local districtType = bonusData.targetDistrict
+        
+        if combinedBonuses[districtType] then
+            combinedBonuses[districtType].totalBonus = combinedBonuses[districtType].totalBonus + bonusData.bonus
+            combinedBonuses[districtType].count = combinedBonuses[districtType].count + 1
+        else
+            combinedBonuses[districtType] = {
+                districtType = districtType,
+                displayName = bonusData.displayName,
+                totalBonus = bonusData.bonus,
+                count = 1
+            }
+        end
+        
+        totalBonus = totalBonus + bonusData.bonus
+    end
+    
+    -- Convert to array format
+    local result = {}
+    for _, data in pairs(combinedBonuses) do
+        table.insert(result, data)
+    end
+    
+    return result, totalBonus
+end
+
+-- Get the maximum possible adjacency bonus for a district type at any location
+function GetMaximumPossibleAdjacency(districtType)
+    local maxBonus = 0
+    local targets = GetDistrictTargets(districtType)
+    
+    for _, target in ipairs(targets) do
+        maxBonus = maxBonus + target.bonus
+    end
+    
+    -- Theoretical maximum if all 6 adjacent plots had the highest-bonus districts
+    local highestSingleBonus = 0
+    for _, target in ipairs(targets) do
+        if target.bonus > highestSingleBonus then
+            highestSingleBonus = target.bonus
+        end
+    end
+    
+    return {
+        practicalMaximum = maxBonus, -- If one of each target type is adjacent
+        theoreticalMaximum = highestSingleBonus * 6 -- If all 6 adjacent plots have the highest bonus
+    }
+end
+
+-- =============================================================================
 -- INITIALIZATION
 -- =============================================================================
 

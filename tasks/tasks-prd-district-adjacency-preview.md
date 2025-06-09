@@ -30,7 +30,7 @@
   - [x] 2.3 Create lookup system for district adjacency rules
   - [x] 2.4 Implement calculation of standard district adjacency bonuses
   - [x] 2.5 Add support for civilization-specific district rules (e.g., Germany's Hansa)
-  - [ ] 2.6 Create system to combine multiple adjacency bonuses into single value
+  - [x] 2.6 Create system to combine multiple adjacency bonuses into single value
   - [ ] 2.7 Implement caching system for adjacency calculations to improve performance
 
 - [ ] 3.0 Create UI display system for adjacency previews
