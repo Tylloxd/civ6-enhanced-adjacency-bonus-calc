@@ -9,9 +9,6 @@
     <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_MOD_NAME">
       <Text>District Adjacency Preview</Text>
     </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_MOD_DESCRIPTION">
-      <Text>Shows adjacency bonuses that a new district would provide to existing adjacent districts during placement preview.</Text>
-    </Row>
     
     <!-- UI Text -->
     <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_BONUS_FORMAT">
@@ -25,85 +22,10 @@
     <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_TOOLTIP_TITLE">
       <Text>Adjacency Bonus Preview</Text>
     </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_TOOLTIP_DESCRIPTION">
-      <Text>This {1} would provide {2} adjacency bonus to the existing {3}.</Text>
-    </Row>
     
     <!-- Debug Messages -->
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_DEBUG_LOADING">
-      <Text>Loading District Adjacency Preview Mod...</Text>
-    </Row>
     <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_DEBUG_INITIALIZED">
       <Text>District Adjacency Preview initialized successfully!</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_DEBUG_PREVIEW_ACTIVE">
-      <Text>District preview activated</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_DEBUG_PREVIEW_INACTIVE">
-      <Text>District preview deactivated</Text>
-    </Row>
-    
-    <!-- Error Messages -->
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_ERROR_INVALID_DISTRICT">
-      <Text>Invalid district type detected</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_ERROR_INVALID_PLOT">
-      <Text>Invalid plot coordinates</Text>
-    </Row>
-    
-    <!-- District Names for Display -->
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_CAMPUS_NAME">
-      <Text>Campus</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_THEATER_NAME">
-      <Text>Theater Square</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_COMMERCIAL_HUB_NAME">
-      <Text>Commercial Hub</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_HARBOR_NAME">
-      <Text>Harbor</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_INDUSTRIAL_ZONE_NAME">
-      <Text>Industrial Zone</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_HOLY_SITE_NAME">
-      <Text>Holy Site</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_GOVERNMENT_NAME">
-      <Text>Government Plaza</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_ENTERTAINMENT_NAME">
-      <Text>Entertainment Complex</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_WATER_ENTERTAINMENT_NAME">
-      <Text>Water Park</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_AQUEDUCT_NAME">
-      <Text>Aqueduct</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_DAM_NAME">
-      <Text>Dam</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_CANAL_NAME">
-      <Text>Canal</Text>
-    </Row>
-    
-    <!-- Unique District Names -->
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_HANSA_NAME">
-      <Text>Hansa</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_ROYAL_NAVY_DOCKYARD_NAME">
-      <Text>Royal Navy Dockyard</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_SUGUBA_NAME">
-      <Text>Suguba</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_LAVRA_NAME">
-      <Text>Lavra</Text>
-    </Row>
-    <Row Tag="LOC_DISTRICT_ADJACENCY_PREVIEW_MBANZA_NAME">
-      <Text>Mbanza</Text>
     </Row>
     
   </LocalizedText>
