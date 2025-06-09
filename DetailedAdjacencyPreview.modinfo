@@ -21,11 +21,9 @@
   <Files>
     <File>UI/DetailedAdjacencyPreview.lua</File>
     <File>UI/DetailedAdjacencyPreview.xml</File>
+    <File>UI/DetailedAdjacencyPreview_Overlays.lua</File>
     <File>Scripts/DetailedAdjacencyPreview_Core.lua</File>
     <File>Scripts/DetailedAdjacencyPreview_Utils.lua</File>
-    <File>Data/DetailedAdjacencyPreview_Config.xml</File>
-    <File>Data/DetailedAdjacencyPreview_Districts.xml</File>
-    <File>Localization/DetailedAdjacencyPreview_Text.xml</File>
   </Files>
   <Criteria>
     <ModInUse>Expansion1</ModInUse>

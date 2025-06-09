@@ -5,10 +5,9 @@
 - `DetailedAdjacencyPreview.modinfo` - ✅ CREATED - Mod definition file containing metadata, dependencies, and configuration.
 - `Scripts/DetailedAdjacencyPreview_Core.lua` - ✅ CREATED - Core adjacency calculation engine with data structures and benefit calculation functions.
 - `Scripts/DetailedAdjacencyPreview_Utils.lua` - ✅ CREATED - Caching system and performance optimization utilities with statistics tracking.
-- `Data/DetailedAdjacencyPreview_Config.xml` - Configuration settings for the mod including visual styling parameters.
-- `Data/DetailedAdjacencyPreview_Districts.xml` - District type definitions and adjacency rule mappings.
-- `UI/DetailedAdjacencyPreview.lua` - Main Lua script handling UI integration and overlay display logic.
-- `UI/DetailedAdjacencyPreview.xml` - UI context definitions and event bindings for the overlay system.
+- `UI/DetailedAdjacencyPreview.lua` - ✅ CREATED - Main UI integration script with district placement hooks and event handlers.
+- `UI/DetailedAdjacencyPreview.xml` - ✅ CREATED - UI context definitions for loading the mod in-game.
+- `UI/DetailedAdjacencyPreview_Overlays.lua` - ✅ CREATED - Visual overlay system for displaying adjacency benefits on map.
 - `Localization/DetailedAdjacencyPreview_Text.xml` - Text strings for UI elements (if needed for debugging/options).
 - `Assets/DetailedAdjacencyPreview_Icons.dds` - Custom icon assets for benefit type symbols (if needed).
 
@@ -30,34 +29,34 @@
   - [x] 1.5 Test build and deployment pipeline by creating a minimal test mod
   - [x] 1.6 Verify mod appears in game's Additional Content menu
 
-- [ ] 2.0 Create Core Adjacency Calculation System
+- [x] 2.0 Create Core Adjacency Calculation System
   - [x] 2.1 Research and document Civilization VI's existing adjacency rule system
   - [x] 2.2 Create data structure mapping district types to their adjacency benefits
   - [x] 2.3 Implement function to calculate adjacency benefits for existing districts
   - [x] 2.4 Create caching system to optimize repeated calculations
-  - [ ] 2.5 Add support for all base game district types
-  - [ ] 2.6 Add support for DLC district types (Government Plaza, Diplomatic Quarter, etc.)
-  - [ ] 2.7 Add support for unique civilization districts
-  - [ ] 2.8 Implement benefit aggregation logic for multiple district bonuses
+  - [x] 2.5 Add support for all base game district types
+  - [x] 2.6 Add support for DLC district types (Government Plaza, Diplomatic Quarter, etc.)
+  - [x] 2.7 Add support for unique civilization districts
+  - [x] 2.8 Implement benefit aggregation logic for multiple district bonuses
 
-- [ ] 3.0 Implement District Placement Preview Integration
-  - [ ] 3.1 Identify and hook into the game's district placement preview system
-  - [ ] 3.2 Create event listeners for district placement mode activation
-  - [ ] 3.3 Implement tile compatibility detection using game's existing system
-  - [ ] 3.4 Create real-time calculation triggers for cursor movement
-  - [ ] 3.5 Implement district placement preview exit detection
-  - [ ] 3.6 Add error handling for edge cases in placement system
-  - [ ] 3.7 Ensure compatibility with different district placement contexts
+- [x] 3.0 Implement District Placement Preview Integration
+  - [x] 3.1 Identify and hook into the game's district placement preview system
+  - [x] 3.2 Create event listeners for district placement mode activation
+  - [x] 3.3 Implement tile compatibility detection using game's existing system
+  - [x] 3.4 Create real-time calculation triggers for cursor movement
+  - [x] 3.5 Implement district placement preview exit detection
+  - [x] 3.6 Add error handling for edge cases in placement system
+  - [x] 3.7 Ensure compatibility with different district placement contexts
 
-- [ ] 4.0 Develop Visual Overlay Display System
-  - [ ] 4.1 Create UI overlay components for displaying adjacency benefits
-  - [ ] 4.2 Implement benefit visualization (numbers + symbols) matching game style
-  - [ ] 4.3 Create positioning logic for overlays on compatible tiles
-  - [ ] 4.4 Add support for multiple benefit types per tile display
-  - [ ] 4.5 Implement dynamic overlay updates for real-time cursor movement
-  - [ ] 4.6 Add visual styling consistent with existing game UI
-  - [ ] 4.7 Optimize overlay rendering performance
-  - [ ] 4.8 Add overlay cleanup when exiting district placement mode
+- [x] 4.0 Develop Visual Overlay Display System
+  - [x] 4.1 Create UI overlay components for displaying adjacency benefits
+  - [x] 4.2 Implement benefit visualization (numbers + symbols) matching game style
+  - [x] 4.3 Create positioning logic for overlays on compatible tiles
+  - [x] 4.4 Add support for multiple benefit types per tile display
+  - [x] 4.5 Implement dynamic overlay updates for real-time cursor movement
+  - [x] 4.6 Add visual styling consistent with existing game UI
+  - [x] 4.7 Optimize overlay rendering performance
+  - [x] 4.8 Add overlay cleanup when exiting district placement mode
 
 - [ ] 5.0 Testing and Compatibility Validation
   - [ ] 5.1 Create test scenarios for all base game district combinations
