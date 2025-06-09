@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Mod id="3c8c7e47-d5a2-4b9e-8f14-2d6c9e4a7b8c" version="1.0">
+  <Properties>
+    <Name>District Adjacency Preview</Name>
+    <Description>Shows the adjacency bonuses that a new district would provide to existing adjacent districts during placement preview. Helps optimize city planning by displaying numerical adjacency values on applicable tiles.</Description>
+    <Authors>District Adjacency Preview Team</Authors>
+    <SpecialThanks>Civilization VI Modding Community</SpecialThanks>
+    <Teaser>See adjacency bonuses for existing districts during new district placement</Teaser>
+    <AffectsSavedGames>0</AffectsSavedGames>
+    <SupportsSinglePlayer>1</SupportsSinglePlayer>
+    <SupportsMultiplayer>1</SupportsMultiplayer>
+    <SupportsHotSeat>1</SupportsHotSeat>
+    <SupportsCrossPlattform>1</SupportsCrossPlattform>
+    <InGameActionData>
+      <UpdateDatabase id="DistrictAdjacencyPreview_Database">
+        <File>Config/config.sql</File>
+      </UpdateDatabase>
+      <UpdateText id="DistrictAdjacencyPreview_Text">
+        <File>Text/DistrictAdjacencyPreview_Text.xml</File>
+      </UpdateText>
+      <ImportFiles id="DistrictAdjacencyPreview_Import">
+        <File>UI/DistrictAdjacencyPreviewContext.xml</File>
+        <File>UI/DistrictAdjacencyPreview_UI.lua</File>
+        <File>DistrictAdjacencyPreview.lua</File>
+      </ImportFiles>
+    </InGameActionData>
+  </Properties>
+  <Dependencies>
+    <Mod id="4873eb62-8ccc-4574-b784-dda455e74e68" title="Gathering Storm" />
+  </Dependencies>
+  <References />
+  <Blocks />
+  <Files>
+    <File>Config/config.sql</File>
+    <File>Text/DistrictAdjacencyPreview_Text.xml</File>
+    <File>UI/DistrictAdjacencyPreviewContext.xml</File>
+    <File>UI/DistrictAdjacencyPreview_UI.lua</File>
+    <File>DistrictAdjacencyPreview.lua</File>
+  </Files>
+</Mod> 

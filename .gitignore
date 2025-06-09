@@ -1,0 +1,46 @@
+# =============================================================================
+# Civilization VI Mod Development - .gitignore
+# =============================================================================
+
+# Visual Studio / IDE files
+*.suo
+*.user
+*.userprefs
+*.sln.docstates
+.vs/
+.vscode/
+
+# Temporary files
+*.tmp
+*.temp
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# ModBuddy specific files
+*.civ6sln
+*.civ6proj.user
+bin/
+obj/
+
+# Backup files
+*.bak
+*.backup
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Development documentation (keep in repo)
+# *.md
+# *.mdc
+
+# Keep these important files
+!LICENSE
+!README.md
+!*.md
+!*.mdc 
