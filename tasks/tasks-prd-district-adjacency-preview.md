@@ -25,7 +25,7 @@
   - [x] 1.6 Configure mod to work with Gathering Storm expansion
 
 - [ ] 2.0 Implement district adjacency calculation system
-  - [ ] 2.1 Create function to identify adjacent plots to placement location
+  - [x] 2.1 Create function to identify adjacent plots to placement location
   - [ ] 2.2 Implement detection of existing districts on adjacent plots
   - [ ] 2.3 Create lookup system for district adjacency rules
   - [ ] 2.4 Implement calculation of standard district adjacency bonuses

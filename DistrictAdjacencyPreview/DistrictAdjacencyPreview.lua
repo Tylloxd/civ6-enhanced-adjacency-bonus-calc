@@ -131,6 +131,80 @@ function CalculateAdjacencyBonus(newDistrictType, existingDistrictType)
 end
 
 -- =============================================================================
+-- PLOT ADJACENCY FUNCTIONS (Task 2.1)
+-- =============================================================================
+
+-- Get all adjacent plots to a given plot coordinate
+function GetAdjacentPlots(plotX, plotY)
+    local adjacentPlots = {}
+    local pPlot = Map.GetPlot(plotX, plotY)
+    
+    if pPlot == nil then
+        print("ERROR: Invalid plot coordinates:", plotX, plotY)
+        return adjacentPlots
+    end
+    
+    -- Get all plots within range 1 (adjacent plots only)
+    local plotIterator = Map.GetAdjacentPlots(plotX, plotY)
+    
+    for adjPlot in plotIterator do
+        if adjPlot ~= nil then
+            table.insert(adjacentPlots, {
+                plot = adjPlot,
+                x = adjPlot:GetX(),
+                y = adjPlot:GetY()
+            })
+        end
+    end
+    
+    print("Found", #adjacentPlots, "adjacent plots to", plotX, plotY)
+    return adjacentPlots
+end
+
+-- Alternative method using direction-based adjacency for validation
+function GetAdjacentPlotsDirectional(plotX, plotY)
+    local adjacentPlots = {}
+    local mapWidth = Map.GetGridWidth()
+    local mapHeight = Map.GetGridHeight()
+    
+    -- Define the 6 hexagonal directions (Civ VI uses hex grid)
+    local directions = {
+        {0, 1},   -- North
+        {1, 0},   -- Northeast  
+        {1, -1},  -- Southeast
+        {0, -1},  -- South
+        {-1, 0},  -- Southwest
+        {-1, 1}   -- Northwest
+    }
+    
+    for _, direction in ipairs(directions) do
+        local adjX = plotX + direction[1]
+        local adjY = plotY + direction[2]
+        
+        -- Handle map wrapping and bounds checking
+        if adjX >= 0 and adjX < mapWidth and adjY >= 0 and adjY < mapHeight then
+            local adjPlot = Map.GetPlot(adjX, adjY)
+            if adjPlot ~= nil then
+                table.insert(adjacentPlots, {
+                    plot = adjPlot,
+                    x = adjX,
+                    y = adjY
+                })
+            end
+        end
+    end
+    
+    return adjacentPlots
+end
+
+-- Validate that a plot is actually adjacent to the placement location
+function IsPlotAdjacent(placementX, placementY, testX, testY)
+    -- Simple distance check - adjacent plots are exactly 1 tile away
+    local distance = Map.GetPlotDistance(placementX, placementY, testX, testY)
+    return distance == 1
+end
+
+-- =============================================================================
 -- EVENT HANDLERS
 -- =============================================================================
 
