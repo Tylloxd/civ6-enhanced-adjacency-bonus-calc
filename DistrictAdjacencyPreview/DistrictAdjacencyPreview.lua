@@ -205,6 +205,118 @@ function IsPlotAdjacent(placementX, placementY, testX, testY)
 end
 
 -- =============================================================================
+-- DISTRICT DETECTION FUNCTIONS (Task 2.2)
+-- =============================================================================
+
+-- Get the district type on a specific plot (if any)
+function GetDistrictOnPlot(pPlot)
+    if pPlot == nil then
+        return nil
+    end
+    
+    -- Check if plot has a district
+    local districtID = pPlot:GetDistrictID()
+    if districtID == -1 then
+        return nil -- No district on this plot
+    end
+    
+    -- Get the district object
+    local pDistrict = CityManager.GetDistrict(districtID)
+    if pDistrict == nil then
+        return nil
+    end
+    
+    -- Get district type
+    local districtType = pDistrict:GetType()
+    if districtType == -1 then
+        return nil
+    end
+    
+    -- Convert district type ID to string
+    local districtInfo = GameInfo.Districts[districtType]
+    if districtInfo then
+        return districtInfo.DistrictType
+    end
+    
+    return nil
+end
+
+-- Get all districts on adjacent plots to a placement location
+function GetAdjacentDistricts(plotX, plotY)
+    local adjacentDistricts = {}
+    local adjacentPlots = GetAdjacentPlots(plotX, plotY)
+    
+    for _, plotData in ipairs(adjacentPlots) do
+        local districtType = GetDistrictOnPlot(plotData.plot)
+        if districtType ~= nil then
+            table.insert(adjacentDistricts, {
+                districtType = districtType,
+                plot = plotData.plot,
+                x = plotData.x,
+                y = plotData.y
+            })
+            print("Found district", districtType, "at", plotData.x, plotData.y)
+        end
+    end
+    
+    print("Found", #adjacentDistricts, "adjacent districts to", plotX, plotY)
+    return adjacentDistricts
+end
+
+-- Check if a specific district type exists adjacent to a plot
+function HasAdjacentDistrict(plotX, plotY, targetDistrictType)
+    local adjacentDistricts = GetAdjacentDistricts(plotX, plotY)
+    
+    for _, districtData in ipairs(adjacentDistricts) do
+        local baseType = GetBaseDistrictType(districtData.districtType)
+        local targetBaseType = GetBaseDistrictType(targetDistrictType)
+        
+        if baseType == targetBaseType then
+            return true
+        end
+    end
+    
+    return false
+end
+
+-- Get all unique district types adjacent to a plot
+function GetAdjacentDistrictTypes(plotX, plotY)
+    local adjacentDistricts = GetAdjacentDistricts(plotX, plotY)
+    local uniqueTypes = {}
+    local typesSeen = {}
+    
+    for _, districtData in ipairs(adjacentDistricts) do
+        local baseType = GetBaseDistrictType(districtData.districtType)
+        if not typesSeen[baseType] then
+            typesSeen[baseType] = true
+            table.insert(uniqueTypes, baseType)
+        end
+    end
+    
+    return uniqueTypes
+end
+
+-- Validate that a district is properly constructed (not just planned)
+function IsDistrictComplete(pPlot)
+    if pPlot == nil then
+        return false
+    end
+    
+    local districtID = pPlot:GetDistrictID()
+    if districtID == -1 then
+        return false
+    end
+    
+    local pDistrict = CityManager.GetDistrict(districtID)
+    if pDistrict == nil then
+        return false
+    end
+    
+    -- Check if district is complete (not under construction)
+    return pDistrict:IsComplete()
+end
+
+-- =============================================================================
 -- EVENT HANDLERS
 -- =============================================================================
 
