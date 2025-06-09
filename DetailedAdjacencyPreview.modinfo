@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Mod id="a4f6c8e2-5d1b-4f89-9c3e-8e7f6b5a4c9d" version="1.0.0">
+  <Properties>
+    <Name>Detailed Adjacency Preview</Name>
+    <Description>Shows adjacency benefits that existing districts would receive from new district placements during the district placement preview. Enhances strategic city planning by displaying complete adjacency information for optimal district placement decisions.</Description>
+    <Authors>Jonathan</Authors>
+    <Teaser>Enhanced district placement preview with complete adjacency information</Teaser>
+    <AffectsSavedGames>false</AffectsSavedGames>
+    <CompatibleVersions>2.0</CompatibleVersions>
+    <Tags>UI,Districts,Strategy,Adjacency</Tags>
+  </Properties>
+  <Dependencies>
+    <Mod id="1B28771A-C749-434B-9053-D1380C553DE9" title="Expansion: Rise and Fall" />
+    <Mod id="4873eb62-8ccc-4574-b784-dda455e74e68" title="Expansion: Gathering Storm" />
+  </Dependencies>
+  <References>
+    <Mod id="1B28771A-C749-434B-9053-D1380C553DE9" title="Expansion: Rise and Fall" />
+    <Mod id="4873eb62-8ccc-4574-b784-dda455e74e68" title="Expansion: Gathering Storm" />
+  </References>
+  <Blocks />
+  <Files>
+    <File>UI/DetailedAdjacencyPreview.lua</File>
+    <File>UI/DetailedAdjacencyPreview.xml</File>
+    <File>Scripts/DetailedAdjacencyPreview_Core.lua</File>
+    <File>Scripts/DetailedAdjacencyPreview_Utils.lua</File>
+    <File>Data/DetailedAdjacencyPreview_Config.xml</File>
+    <File>Data/DetailedAdjacencyPreview_Districts.xml</File>
+    <File>Localization/DetailedAdjacencyPreview_Text.xml</File>
+  </Files>
+  <Criteria>
+    <ModInUse>Expansion1</ModInUse>
+    <ModInUse>Expansion2</ModInUse>
+  </Criteria>
+</Mod> 
