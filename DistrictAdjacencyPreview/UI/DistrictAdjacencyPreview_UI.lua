@@ -87,6 +87,17 @@ function SetupUIEventHandlers()
     -- Connect to input events for real-time updates
     Events.InputActionTriggered.Add(OnInputAction)
     
+    -- Enhanced event handlers for district placement preview (Task 3.5)
+    Events.DistrictPlacementShow.Add(OnDistrictPlacementShow)
+    Events.DistrictPlacementHide.Add(OnDistrictPlacementHide)
+    Events.DistrictPlacementUpdate.Add(OnDistrictPlacementUpdate)
+    
+    -- Real-time cursor movement handlers (Task 3.6)
+    Events.PlotHover.Add(OnPlotHover)
+    Events.CursorMove.Add(OnCursorMove)
+    Events.PlotMouseEnter.Add(OnPlotMouseEnter)
+    Events.PlotMouseExit.Add(OnPlotMouseExit)
+    
     print("UI event handlers configured")
 end
 
@@ -324,6 +335,192 @@ function GetUIState()
         playerID = g_UIState.playerID,
         activeInstances = #g_ActiveBonusInstances
     }
+end
+
+-- =============================================================================
+-- ENHANCED DISTRICT PLACEMENT EVENT HANDLERS (Task 3.5)
+-- =============================================================================
+
+-- Handle district placement preview showing
+function OnDistrictPlacementShow(districtType, cityID)
+    print("District placement preview shown for", districtType)
+    g_UIState.currentDistrictType = districtType
+    g_UIState.isPreviewActive = true
+    
+    -- Initialize UI if needed
+    if not g_IsUIInitialized then
+        InitializeUI()
+    end
+    
+    -- Update preview if we have plot coordinates
+    if g_UIState.currentPlotX >= 0 and g_UIState.currentPlotY >= 0 then
+        UpdateAdjacencyPreview(districtType, g_UIState.currentPlotX, g_UIState.currentPlotY)
+    end
+end
+
+-- Handle district placement preview hiding
+function OnDistrictPlacementHide()
+    print("District placement preview hidden")
+    g_UIState.currentDistrictType = nil
+    ClearAdjacencyPreview()
+end
+
+-- Handle district placement updates (when district type changes)
+function OnDistrictPlacementUpdate(districtType, cityID)
+    print("District placement updated to", districtType)
+    g_UIState.currentDistrictType = districtType
+    
+    -- Update preview with new district type
+    if g_UIState.currentPlotX >= 0 and g_UIState.currentPlotY >= 0 then
+        UpdateAdjacencyPreview(districtType, g_UIState.currentPlotX, g_UIState.currentPlotY)
+    end
+end
+
+-- =============================================================================
+-- REAL-TIME CURSOR MOVEMENT HANDLERS (Task 3.6)
+-- =============================================================================
+
+-- Handle plot hover events for real-time updates
+function OnPlotHover(plotX, plotY)
+    if not g_UIState.isPreviewActive or not g_IsUIInitialized or not g_UIState.currentDistrictType then
+        return
+    end
+    
+    -- Update coordinates
+    g_UIState.currentPlotX = plotX
+    g_UIState.currentPlotY = plotY
+    
+    -- Real-time preview update
+    UpdateAdjacencyPreviewRealTime(g_UIState.currentDistrictType, plotX, plotY)
+end
+
+-- Handle cursor movement for continuous updates
+function OnCursorMove(plotX, plotY)
+    if not g_UIState.isPreviewActive or not g_IsUIInitialized or not g_UIState.currentDistrictType then
+        return
+    end
+    
+    -- Only update if the plot actually changed
+    if plotX ~= g_UIState.currentPlotX or plotY ~= g_UIState.currentPlotY then
+        g_UIState.currentPlotX = plotX
+        g_UIState.currentPlotY = plotY
+        
+        -- Real-time preview update with throttling
+        UpdateAdjacencyPreviewRealTime(g_UIState.currentDistrictType, plotX, plotY)
+    end
+end
+
+-- Handle mouse entering a plot
+function OnPlotMouseEnter(plotX, plotY)
+    if not g_UIState.isPreviewActive or not g_IsUIInitialized then
+        return
+    end
+    
+    -- Show enhanced preview on mouse enter
+    if g_UIState.currentDistrictType then
+        HighlightAdjacencyPreview(plotX, plotY)
+    end
+end
+
+-- Handle mouse exiting a plot
+function OnPlotMouseExit(plotX, plotY)
+    if not g_UIState.isPreviewActive or not g_IsUIInitialized then
+        return
+    end
+    
+    -- Remove highlight effects
+    RemoveAdjacencyHighlight()
+end
+
+-- Real-time adjacency preview update with performance optimization
+function UpdateAdjacencyPreviewRealTime(districtType, plotX, plotY)
+    if not g_IsUIInitialized or not g_UIState.isPreviewActive then
+        return
+    end
+    
+    -- Use cached calculation for performance
+    local previewData = GetCachedAdjacencyPreviewData(districtType, plotX, plotY, g_UIState.playerID)
+    
+    if previewData and previewData.hasAnyBonus then
+        -- Update display without full clear/rebuild for performance
+        UpdateBonusNumbersRealTime(previewData)
+    else
+        -- Clear if no bonuses
+        ClearAdjacencyPreview()
+    end
+end
+
+-- Update bonus numbers for real-time performance
+function UpdateBonusNumbersRealTime(previewData)
+    -- Clear existing instances
+    ClearAdjacencyPreview()
+    
+    -- Display new numbers
+    DisplayBonusNumbers(previewData)
+    
+    g_CurrentPreviewData = previewData
+end
+
+-- Highlight adjacency preview for enhanced visual feedback
+function HighlightAdjacencyPreview(plotX, plotY)
+    -- Add glow effects to active bonus numbers
+    for _, instanceData in ipairs(g_ActiveBonusInstances) do
+        if instanceData.instance and instanceData.instance.NumberGlow then
+            instanceData.instance.NumberGlow:SetHide(false)
+            
+            -- Pulse animation for highlight
+            local pulseAnim = instanceData.instance.NumberGlow:GetScaleAnimation()
+            pulseAnim:SetToScale(1.2, 1.2)
+            pulseAnim:SetSpeed(1.5)
+            pulseAnim:SetCycle("Bounce")
+            pulseAnim:Play()
+        end
+    end
+end
+
+-- Remove adjacency highlight effects
+function RemoveAdjacencyHighlight()
+    -- Remove glow effects
+    for _, instanceData in ipairs(g_ActiveBonusInstances) do
+        if instanceData.instance and instanceData.instance.NumberGlow then
+            instanceData.instance.NumberGlow:SetHide(true)
+            instanceData.instance.NumberGlow:StopAnimation()
+        end
+    end
+end
+
+-- =============================================================================
+-- PERFORMANCE OPTIMIZATION FOR REAL-TIME UPDATES
+-- =============================================================================
+
+-- Throttling variables for performance
+local g_LastUpdateTime = 0
+local g_UpdateThrottleInterval = 0.1 -- Update at most every 100ms
+
+-- Throttled update function to prevent performance issues
+function ThrottledAdjacencyUpdate(districtType, plotX, plotY)
+    local currentTime = os.clock()
+    
+    if currentTime - g_LastUpdateTime >= g_UpdateThrottleInterval then
+        UpdateAdjacencyPreviewRealTime(districtType, plotX, plotY)
+        g_LastUpdateTime = currentTime
+    end
+end
+
+-- Enhanced cursor movement with throttling
+function OnCursorMoveThrottled(plotX, plotY)
+    if not g_UIState.isPreviewActive or not g_IsUIInitialized or not g_UIState.currentDistrictType then
+        return
+    end
+    
+    -- Only update if the plot actually changed
+    if plotX ~= g_UIState.currentPlotX or plotY ~= g_UIState.currentPlotY then
+        g_UIState.currentPlotX = plotX
+        g_UIState.currentPlotY = plotY
+        
+        -- Use throttled update
+        ThrottledAdjacencyUpdate(g_UIState.currentDistrictType, plotX, plotY)
+    end
 end
 
 -- =============================================================================

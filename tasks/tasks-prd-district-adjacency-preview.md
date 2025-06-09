@@ -35,15 +35,15 @@
 
 - [x] 2.0 Implement district adjacency calculation system
 
-- [ ] 3.0 Create UI display system for adjacency previews
+- [x] 3.0 Create UI display system for adjacency previews
   - [x] 3.1 Create basic UI layout XML structure
   - [x] 3.2 Set up UI context and instance manager
-  - [ ] 3.3 Implement number display system for showing adjacency values
-  - [ ] 3.4 Create positioning system to show values on correct tiles
-  - [ ] 3.5 Add event handlers for district placement preview
-  - [ ] 3.6 Implement real-time update system for cursor movement
-  - [ ] 3.7 Ensure UI elements don't overlap with existing game interface
-  - [ ] 3.8 Add proper cleanup for UI elements when preview ends
+  - [x] 3.3 Implement number display system for showing adjacency values
+  - [x] 3.4 Create positioning system to show values on correct tiles
+  - [x] 3.5 Add event handlers for district placement preview
+  - [x] 3.6 Implement real-time update system for cursor movement
+  - [x] 3.7 Ensure UI elements don't overlap with existing game interface
+  - [x] 3.8 Add proper cleanup for UI elements when preview ends
 
 - [ ] 4.0 Test and validate mod functionality
   - [ ] 4.1 Test with all vanilla district types
