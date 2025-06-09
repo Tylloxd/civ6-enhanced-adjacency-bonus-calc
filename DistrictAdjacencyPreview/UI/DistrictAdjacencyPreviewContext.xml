@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--=============================================================================
+    District Adjacency Preview UI Context
+    Author: District Adjacency Preview Team
+    Description: UI layout and visual elements for showing adjacency bonuses
+    during district placement preview
+=============================================================================-->
+
+<Context>
+  <!-- ====================================================================== -->
+  <!-- UI INSTANCE DEFINITIONS -->
+  <!-- ====================================================================== -->
+  
+  <!-- Main container for adjacency preview elements -->
+  <Instance Name="AdjacencyPreviewContainer">
+    <Grid>
+      <!-- Background container for all preview elements -->
+      <Box Size="parent,parent" ID="BackgroundContainer" Hidden="true">
+        <Color>0,0,0,0</Color> <!-- Transparent background -->
+      </Box>
+    </Grid>
+  </Instance>
+  
+  <!-- Individual adjacency bonus number display -->
+  <Instance Name="AdjacencyBonusNumber">
+    <Grid Size="40,40" ID="BonusNumberContainer">
+      <!-- Background circle for the number -->
+      <Image Texture="Controls_ButtonControl" Size="40,40" ID="NumberBackground">
+        <Color>0.1,0.1,0.1,0.8</Color> <!-- Semi-transparent dark background -->
+      </Image>
+      
+      <!-- The bonus number text -->
+      <Label String="[COLOR_GREEN]+0[ENDCOLOR]" Font="CivilopediaTitleHeader" FontSize="18" 
+             ID="BonusText" Anchor="C,C" Offset="0,0">
+        <Color>1,1,1,1</Color> <!-- White text -->
+      </Label>
+      
+      <!-- Highlight glow effect for visibility -->
+      <Image Texture="Controls_ButtonControl" Size="44,44" ID="NumberGlow" Anchor="C,C" Offset="0,0" Hidden="true">
+        <Color>1,1,0,0.5</Color> <!-- Yellow glow -->
+      </Image>
+    </Grid>
+  </Instance>
+  
+  <!-- Tooltip container for detailed bonus information -->
+  <Instance Name="AdjacencyTooltip">
+    <Grid Size="300,100" ID="TooltipContainer">
+      <!-- Tooltip background -->
+      <Image Texture="ToolTip_Background" Size="parent,parent" ID="TooltipBackground">
+        <Color>0.15,0.15,0.15,0.95</Color> <!-- Dark semi-transparent background -->
+      </Image>
+      
+      <!-- Tooltip border -->
+      <Image Texture="ToolTip_Border" Size="parent,parent" ID="TooltipBorder">
+        <Color>0.6,0.6,0.6,1</Color> <!-- Gray border -->
+      </Image>
+      
+      <!-- Tooltip content stack -->
+      <Stack StackGrowth="Bottom" ID="TooltipContent" Offset="10,10" Size="280,80">
+        
+        <!-- Tooltip title -->
+        <Label String="Adjacency Bonus Preview" Font="CivilopediaBodyFont" FontSize="14" 
+               ID="TooltipTitle" WrapWidth="280">
+          <Color>1,1,0.8,1</Color> <!-- Light yellow title -->
+        </Label>
+        
+        <!-- Tooltip description -->
+        <Label String="This district would provide bonuses to adjacent districts." 
+               Font="CivilopediaBodyFont" FontSize="12" ID="TooltipDescription" 
+               WrapWidth="280" Offset="0,5">
+          <Color>0.9,0.9,0.9,1</Color> <!-- Light gray description -->
+        </Label>
+        
+        <!-- Bonus breakdown list -->
+        <Stack StackGrowth="Bottom" ID="BonusBreakdown" Offset="0,10" Size="280,50">
+          <!-- Individual bonus entries will be added dynamically -->
+        </Stack>
+        
+      </Stack>
+    </Grid>
+  </Instance>
+  
+  <!-- Individual bonus breakdown entry for tooltip -->
+  <Instance Name="BonusBreakdownEntry">
+    <Grid Size="280,20" ID="BreakdownEntryContainer">
+      <!-- Bonus icon (district type icon) -->
+      <Image Texture="ICON_DISTRICT_GENERIC" Size="16,16" ID="DistrictIcon" Offset="0,2">
+        <Color>1,1,1,1</Color>
+      </Image>
+      
+      <!-- District name and bonus text -->
+      <Label String="[COLOR_WHITE]Campus: [COLOR_GREEN]+1[ENDCOLOR][ENDCOLOR]" 
+             Font="CivilopediaBodyFont" FontSize="11" ID="BonusEntryText" 
+             Offset="20,0" WrapWidth="260">
+        <Color>0.9,0.9,0.9,1</Color>
+      </Label>
+    </Grid>
+  </Instance>
+  
+  <!-- ====================================================================== -->
+  <!-- ANIMATION DEFINITIONS -->
+  <!-- ====================================================================== -->
+  
+  <!-- Fade in animation for bonus numbers -->
+  <Animation Name="BonusNumberFadeIn" Type="Alpha" Speed="2" Pause="0">
+    <AlphaAnim Anchor="L,T" AnchorSide="L,T" Offset="0,0" Size="parent,parent" 
+              Cycle="Once" Function="OutBounce" Start="0" End="1" />
+  </Animation>
+  
+  <!-- Fade out animation for bonus numbers -->
+  <Animation Name="BonusNumberFadeOut" Type="Alpha" Speed="1.5" Pause="0">
+    <AlphaAnim Anchor="L,T" AnchorSide="L,T" Offset="0,0" Size="parent,parent" 
+              Cycle="Once" Function="InQuart" Start="1" End="0" />
+  </Animation>
+  
+  <!-- Pulse animation for highlighting active bonuses -->
+  <Animation Name="BonusPulse" Type="Scale" Speed="1" Pause="0">
+    <ScaleAnim Anchor="C,C" AnchorSide="C,C" Offset="0,0" Size="parent,parent" 
+              Cycle="Bounce" Function="OutSine" Start="1,1" End="1.1,1.1" />
+  </Animation>
+  
+  <!-- ====================================================================== -->
+  <!-- STYLE DEFINITIONS -->
+  <!-- ====================================================================== -->
+  
+  <!-- Style for positive bonus numbers -->
+  <Style Name="PositiveBonusStyle">
+    <Color>0,1,0,1</Color> <!-- Green color for positive bonuses -->
+    <FontStyle>Bold</FontStyle>
+  </Style>
+  
+  <!-- Style for zero bonus numbers -->
+  <Style Name="ZeroBonusStyle">
+    <Color>0.6,0.6,0.6,1</Color> <!-- Gray color for zero bonuses -->
+    <FontStyle>Normal</FontStyle>
+  </Style>
+  
+  <!-- Style for highlighted numbers -->
+  <Style Name="HighlightedBonusStyle">
+    <Color>1,1,0,1</Color> <!-- Yellow color for highlighted bonuses -->
+    <FontStyle>Bold</FontStyle>
+  </Style>
+  
+</Context> 

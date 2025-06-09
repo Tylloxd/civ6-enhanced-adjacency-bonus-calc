@@ -31,11 +31,13 @@
   - [x] 2.4 Implement calculation of standard district adjacency bonuses
   - [x] 2.5 Add support for civilization-specific district rules (e.g., Germany's Hansa)
   - [x] 2.6 Create system to combine multiple adjacency bonuses into single value
-  - [ ] 2.7 Implement caching system for adjacency calculations to improve performance
+  - [x] 2.7 Implement caching system for adjacency calculations to improve performance
+
+- [x] 2.0 Implement district adjacency calculation system
 
 - [ ] 3.0 Create UI display system for adjacency previews
-  - [ ] 3.1 Create basic UI layout XML structure
-  - [ ] 3.2 Set up UI context and instance manager
+  - [x] 3.1 Create basic UI layout XML structure
+  - [x] 3.2 Set up UI context and instance manager
   - [ ] 3.3 Implement number display system for showing adjacency values
   - [ ] 3.4 Create positioning system to show values on correct tiles
   - [ ] 3.5 Add event handlers for district placement preview

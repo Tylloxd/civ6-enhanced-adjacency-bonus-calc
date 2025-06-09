@@ -933,6 +933,160 @@ function GetMaximumPossibleAdjacency(districtType)
 end
 
 -- =============================================================================
+-- ADJACENCY CALCULATION CACHING SYSTEM (Task 2.7)
+-- =============================================================================
+
+-- Cache for adjacency calculations to improve performance
+local g_AdjacencyCache = {}
+local g_CacheHits = 0
+local g_CacheMisses = 0
+
+-- Generate cache key for adjacency calculation
+function GenerateAdjacencyCacheKey(districtType, plotX, plotY, playerID)
+    return string.format("%s_%d_%d_%s", districtType, plotX, plotY, tostring(playerID or ""))
+end
+
+-- Clear the adjacency cache (useful when districts change)
+function ClearAdjacencyCache()
+    g_AdjacencyCache = {}
+    g_CacheHits = 0
+    g_CacheMisses = 0
+    print("Adjacency cache cleared")
+end
+
+-- Get cached adjacency data or calculate and cache new data
+function GetCachedAdjacencyPreviewData(districtType, placementX, placementY, playerID)
+    local cacheKey = GenerateAdjacencyCacheKey(districtType, placementX, placementY, playerID)
+    
+    -- Check if we have cached data
+    if g_AdjacencyCache[cacheKey] then
+        g_CacheHits = g_CacheHits + 1
+        return g_AdjacencyCache[cacheKey]
+    end
+    
+    -- Calculate new data and cache it
+    g_CacheMisses = g_CacheMisses + 1
+    local previewData = GetAdjacencyPreviewData(districtType, placementX, placementY, playerID)
+    
+    -- Cache the result
+    g_AdjacencyCache[cacheKey] = previewData
+    
+    return previewData
+end
+
+-- Get cached combined bonus or calculate and cache
+function GetCachedCombinedBonus(districtType, plotX, plotY, playerID)
+    local previewData = GetCachedAdjacencyPreviewData(districtType, plotX, plotY, playerID)
+    
+    if not previewData.hasAnyBonus then
+        return 0, {}
+    end
+    
+    return CombineAdjacencyBonuses(previewData.bonuses)
+end
+
+-- Invalidate cache entries for a specific plot (when districts change)
+function InvalidateCacheForPlot(plotX, plotY)
+    local keysToRemove = {}
+    
+    for cacheKey, _ in pairs(g_AdjacencyCache) do
+        -- Check if cache key contains this plot's coordinates
+        if string.find(cacheKey, "_" .. plotX .. "_" .. plotY .. "_") then
+            table.insert(keysToRemove, cacheKey)
+        end
+    end
+    
+    -- Remove invalidated entries
+    for _, key in ipairs(keysToRemove) do
+        g_AdjacencyCache[key] = nil
+    end
+    
+    if #keysToRemove > 0 then
+        print("Invalidated", #keysToRemove, "cache entries for plot", plotX, plotY)
+    end
+end
+
+-- Invalidate cache entries that might be affected by a district being built
+function InvalidateCacheForDistrictPlacement(plotX, plotY)
+    -- Invalidate cache for the placement plot and all adjacent plots
+    InvalidateCacheForPlot(plotX, plotY)
+    
+    local adjacentPlots = GetAdjacentPlots(plotX, plotY)
+    for _, plotData in ipairs(adjacentPlots) do
+        InvalidateCacheForPlot(plotData.x, plotData.y)
+    end
+end
+
+-- Get cache statistics (for debugging and performance monitoring)
+function GetCacheStatistics()
+    local totalRequests = g_CacheHits + g_CacheMisses
+    local hitRate = totalRequests > 0 and (g_CacheHits / totalRequests * 100) or 0
+    
+    return {
+        hits = g_CacheHits,
+        misses = g_CacheMisses,
+        totalRequests = totalRequests,
+        hitRate = hitRate,
+        cacheSize = table.size(g_AdjacencyCache)
+    }
+end
+
+-- Print cache statistics (for debugging)
+function PrintCacheStatistics()
+    local stats = GetCacheStatistics()
+    print("=== Adjacency Cache Statistics ===")
+    print("Cache hits:", stats.hits)
+    print("Cache misses:", stats.misses)
+    print("Total requests:", stats.totalRequests)
+    print("Hit rate:", string.format("%.1f%%", stats.hitRate))
+    print("Cache size:", stats.cacheSize, "entries")
+    print("==================================")
+end
+
+-- Limit cache size to prevent memory issues
+local MAX_CACHE_SIZE = 1000
+
+function LimitCacheSize()
+    local cacheSize = table.size(g_AdjacencyCache)
+    
+    if cacheSize > MAX_CACHE_SIZE then
+        -- Simple approach: clear half the cache when limit is reached
+        local keysToRemove = {}
+        local count = 0
+        local targetRemove = math.floor(cacheSize / 2)
+        
+        for key, _ in pairs(g_AdjacencyCache) do
+            table.insert(keysToRemove, key)
+            count = count + 1
+            if count >= targetRemove then
+                break
+            end
+        end
+        
+        for _, key in ipairs(keysToRemove) do
+            g_AdjacencyCache[key] = nil
+        end
+        
+        print("Cache size limit reached. Removed", #keysToRemove, "entries")
+    end
+end
+
+-- Helper function to get table size
+function table.size(t)
+    local count = 0
+    for _ in pairs(t) do
+        count = count + 1
+    end
+    return count
+end
+
+-- Enhanced main calculation function with caching
+function CalculateDistrictAdjacencyBonusesCached(newDistrictType, placementX, placementY, playerID)
+    local previewData = GetCachedAdjacencyPreviewData(newDistrictType, placementX, placementY, playerID)
+    return previewData.bonuses, previewData.totalBonus
+end
+
+-- =============================================================================
 -- INITIALIZATION
 -- =============================================================================
 
