@@ -15,7 +15,7 @@
   <Instance Name="AdjacencyPreviewContainer">
     <Grid>
       <!-- Background container for all preview elements -->
-      <Box Size="parent,parent" ID="BackgroundContainer" Hidden="true">
+      <Box Size="40,40" ID="BackgroundContainer" Hidden="true">
         <Color>0,0,0,0</Color> <!-- Transparent background -->
       </Box>
     </Grid>

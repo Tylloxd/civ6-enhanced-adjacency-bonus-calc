@@ -25,10 +25,6 @@
       <File>Config/config.sql</File>
     </UpdateDatabase>
     
-    <UpdateText id="DistrictAdjacencyPreview_Text">
-      <File>Text/DistrictAdjacencyPreview_Text.xml</File>
-    </UpdateText>
-    
     <AddUserInterface id="DistrictAdjacencyPreview_UI">
       <Properties>
         <Context>InGame</Context>
@@ -48,7 +44,6 @@
   
   <Files>
     <File>Config/config.sql</File>
-    <File>Text/DistrictAdjacencyPreview_Text.xml</File>
     <File>UI/DistrictAdjacencyPreviewContext.xml</File>
     <File>UI/DistrictAdjacencyPreview_UI.lua</File>
     <File>DistrictAdjacencyPreview.lua</File>
