@@ -476,6 +476,147 @@ function OnCityBannerUpdate()
 end
 
 -- =============================================================================
+-- ADJACENCY BONUS CALCULATION (Task 2.4)
+-- =============================================================================
+
+-- Calculate the total adjacency bonus a new district would provide to existing districts
+function CalculateDistrictAdjacencyBonuses(newDistrictType, placementX, placementY)
+    local adjacencyBonuses = {}
+    local totalBonus = 0
+    
+    -- Get all adjacent districts
+    local adjacentDistricts = GetAdjacentDistricts(placementX, placementY)
+    
+    for _, districtData in ipairs(adjacentDistricts) do
+        -- Only count completed districts
+        if IsDistrictComplete(districtData.plot) then
+            local bonus = GetDistrictAdjacencyBonus(newDistrictType, districtData.districtType)
+            
+            if bonus > 0 then
+                table.insert(adjacencyBonuses, {
+                    targetDistrict = districtData.districtType,
+                    targetPlot = districtData.plot,
+                    x = districtData.x,
+                    y = districtData.y,
+                    bonus = bonus,
+                    displayName = GetDistrictDisplayName(districtData.districtType)
+                })
+                totalBonus = totalBonus + bonus
+                
+                print("District", GetDistrictDisplayName(newDistrictType), "would provide +" .. bonus, "to", GetDistrictDisplayName(districtData.districtType), "at", districtData.x, districtData.y)
+            end
+        end
+    end
+    
+    return adjacencyBonuses, totalBonus
+end
+
+-- Calculate adjacency for a specific plot and district type
+function CalculateAdjacencyForPlacement(districtType, plotX, plotY)
+    if districtType == nil or plotX == nil or plotY == nil then
+        return {}, 0
+    end
+    
+    local bonuses, total = CalculateDistrictAdjacencyBonuses(districtType, plotX, plotY)
+    
+    print("Placement analysis for", GetDistrictDisplayName(districtType), "at", plotX, plotY, "- Total bonus:", total)
+    
+    return bonuses, total
+end
+
+-- Get adjacency preview data for UI display
+function GetAdjacencyPreviewData(districtType, placementX, placementY)
+    local previewData = {
+        districtType = districtType,
+        placementX = placementX,
+        placementY = placementY,
+        bonuses = {},
+        totalBonus = 0,
+        hasAnyBonus = false
+    }
+    
+    local bonuses, total = CalculateAdjacencyForPlacement(districtType, placementX, placementY)
+    
+    previewData.bonuses = bonuses
+    previewData.totalBonus = total
+    previewData.hasAnyBonus = total > 0
+    
+    -- Create simplified bonus data for each affected plot
+    previewData.plotBonuses = {}
+    for _, bonusData in ipairs(bonuses) do
+        previewData.plotBonuses[bonusData.x .. "," .. bonusData.y] = {
+            bonus = bonusData.bonus,
+            districtName = bonusData.displayName
+        }
+    end
+    
+    return previewData
+end
+
+-- Validate placement and calculate all relevant bonuses
+function ValidateAndCalculateAdjacency(districtType, plotX, plotY)
+    -- Validate inputs
+    if not districtType or not plotX or not plotY then
+        print("ERROR: Invalid parameters for adjacency calculation")
+        return nil
+    end
+    
+    -- Check if plot exists
+    local pPlot = Map.GetPlot(plotX, plotY)
+    if not pPlot then
+        print("ERROR: Invalid plot coordinates", plotX, plotY)
+        return nil
+    end
+    
+    -- Check if district type provides any adjacency
+    if not DoesDistrictProvideAdjacency(districtType) then
+        print("District type", districtType, "does not provide adjacency bonuses")
+        return {
+            districtType = districtType,
+            placementX = plotX,
+            placementY = plotY,
+            bonuses = {},
+            totalBonus = 0,
+            hasAnyBonus = false,
+            plotBonuses = {}
+        }
+    end
+    
+    -- Calculate and return the adjacency data
+    return GetAdjacencyPreviewData(districtType, plotX, plotY)
+end
+
+-- Helper function to format bonus display text
+function FormatBonusText(bonus)
+    if bonus <= 0 then
+        return "+0"
+    end
+    return "+" .. tostring(bonus)
+end
+
+-- Debug function to print all adjacency calculations
+function DebugAdjacencyCalculation(districtType, plotX, plotY)
+    print("=== DEBUG: Adjacency Calculation ===")
+    print("District:", GetDistrictDisplayName(districtType))
+    print("Placement:", plotX, plotY)
+    
+    local adjacentDistricts = GetAdjacentDistricts(plotX, plotY)
+    print("Adjacent districts found:", #adjacentDistricts)
+    
+    for _, districtData in ipairs(adjacentDistricts) do
+        local bonus = GetDistrictAdjacencyBonus(districtType, districtData.districtType)
+        local isComplete = IsDistrictComplete(districtData.plot)
+        print("  -", GetDistrictDisplayName(districtData.districtType), "at", districtData.x, districtData.y, "- Bonus:", bonus, "Complete:", isComplete)
+    end
+    
+    local previewData = GetAdjacencyPreviewData(districtType, plotX, plotY)
+    print("Total calculated bonus:", previewData.totalBonus)
+    print("===================================")
+    
+    return previewData
+end
+
+-- =============================================================================
 -- INITIALIZATION
 -- =============================================================================
 
