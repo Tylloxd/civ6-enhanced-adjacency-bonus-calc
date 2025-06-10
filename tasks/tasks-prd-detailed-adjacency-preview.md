@@ -93,6 +93,12 @@
   - [x] ✅ **COMPLETED**: 6.4 Use `GameInfo.District_Adjacencies()` for adjacency rule queries
   - [ ] 6.5 Test integration with native `UILens.SetAdjacencyBonusDistict()` system
 
+- [ ] 7.0 Mod Metadata and User Experience Enhancements
+  - [x] ✅ **COMPLETED**: 7.1 Fix mod name display (was showing "Unknown Mod" in-game)
+  - [ ] 7.2 **FUTURE**: Add "Last Updated" field to mod metadata for better user information
+  - [ ] 7.3 **FUTURE**: Consider adding mod version increment system for updates
+  - [ ] 7.4 **FUTURE**: Add changelog or update notes system
+
 ## Current Status
 
 **🎉 CORE FUNCTIONALITY PERFECT AND PRODUCTION READY!** 

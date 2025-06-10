@@ -156,30 +156,52 @@ end
 
 -- Calculate adjacency bonus between two districts
 function CalculateAdjacencyBonus(receivingDistrictInfo, givingDistrictInfo)
+    local totalBonus = {
+        Amount = 0,
+        YieldType = nil
+    };
+    
     -- Query the adjacency rules for the receiving district using the correct database structure
     for row in GameInfo.District_Adjacencies() do
         if (row.DistrictType == receivingDistrictInfo.DistrictType) then
             -- Access the yield change data from the reference table
             local yieldChangeRef = row.YieldChangeReference;
             if (yieldChangeRef) then
-                -- Check if this rule involves district adjacency by looking at the YieldChangeId
                 local yieldChangeId = row.YieldChangeId or "";
+                local yieldType = yieldChangeRef.YieldType;
+                local yieldChange = yieldChangeRef.YieldChange;
                 
-                -- Look for district-related adjacency rules (generic district bonus)
-                if (string.find(yieldChangeId, "District") or string.find(yieldChangeId, "DISTRICT")) then
-                    -- Try to get yield information from the reference
-                    local yieldType = yieldChangeRef.YieldType;
-                    local yieldChange = yieldChangeRef.YieldChange;
+                if (yieldType and yieldChange) then
+                    local bonusApplies = false;
                     
-                    if (yieldType and yieldChange) then
-                        return {
-                            Amount = yieldChange,
-                            YieldType = yieldType
-                        };
+                    -- Extract the district name without "DISTRICT_" prefix for flexible matching
+                    local districtName = string.gsub(givingDistrictInfo.DistrictType, "DISTRICT_", "");
+                    
+                    -- Check for specific district-to-district adjacency rules first
+                    -- Look for rules that specifically mention the giving district type
+                    if (string.find(yieldChangeId, givingDistrictInfo.DistrictType) or  -- Full name match
+                        string.find(yieldChangeId, districtName) or                    -- Name without prefix
+                        (districtName == "COMMERCIAL_HUB" and string.find(yieldChangeId, "Commerical_Hub"))) then  -- Handle typo
+                        bonusApplies = true;
+                    
+                    -- Check for generic district adjacency rules
+                    elseif (string.find(yieldChangeId, "District") or string.find(yieldChangeId, "DISTRICT")) then
+                        bonusApplies = true;
+                    end
+                    
+                    -- Add this bonus to the total
+                    if (bonusApplies) then
+                        totalBonus.Amount = totalBonus.Amount + yieldChange;
+                        totalBonus.YieldType = yieldType; -- Assume same yield type for now
                     end
                 end
             end
         end
+    end
+    
+    -- Return the total bonus if any was found
+    if (totalBonus.Amount > 0) then
+        return totalBonus;
     end
     
     return nil;

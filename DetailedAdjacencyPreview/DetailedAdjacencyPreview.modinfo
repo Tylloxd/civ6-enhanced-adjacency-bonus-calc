@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Mod id="a4f6c8e2-5d1b-4f89-9c3e-8e7f6b5a4c9d" version="1">
   <Properties>
-    <n>Detailed Adjacency Preview</n>
+    <Name>Detailed Adjacency Preview</Name>
     <Description>Shows adjacency benefits that existing districts would receive from new district placements during the district placement preview. Enhances strategic city planning by displaying complete adjacency information for optimal district placement decisions.</Description>
     <Authors>Jonathan</Authors>
     <Teaser>Enhanced district placement preview with complete adjacency information</Teaser>
@@ -17,20 +17,10 @@
         <File>UI/DetailedAdjacencyPreview.xml</File>
       </Items>
     </UserInterface>
-    <ImportFiles id="DetailedAdjacencyPreview_Scripts">
-      <Items>
-        <File>Scripts/DetailedAdjacencyPreview_Core.lua</File>
-        <File>Scripts/DetailedAdjacencyPreview_Utils.lua</File>
-        <File>UI/DetailedAdjacencyPreview_Overlays.lua</File>
-      </Items>
-    </ImportFiles>
   </Components>
   <Files>
     <File>UI/DetailedAdjacencyPreview.lua</File>
     <File>UI/DetailedAdjacencyPreview.xml</File>
-    <File>UI/DetailedAdjacencyPreview_Overlays.lua</File>
-    <File>Scripts/DetailedAdjacencyPreview_Core.lua</File>
-    <File>Scripts/DetailedAdjacencyPreview_Utils.lua</File>
   </Files>
 </Mod> 
 
