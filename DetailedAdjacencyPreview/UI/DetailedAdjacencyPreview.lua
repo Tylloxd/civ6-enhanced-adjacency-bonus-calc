@@ -84,16 +84,15 @@ function CalculateReverseAdjacencyForAllTiles(districtInfo)
     
     local compatiblePlots = tResults[CityOperationResults.PLOTS];
     
-    -- ATTEMPT: Try to get purchasable tiles with different parameters
+    -- CORRECTED: Use proper CityCommandTypes for purchasable tiles (found in game source)
     local purchasableParameters = {};
-    purchasableParameters[CityOperationTypes.PARAM_DISTRICT_TYPE] = g_currentDistrictHash;
-    purchasableParameters[CityOperationTypes.PARAM_INSERT_MODE] = CityOperationTypes.VALUE_NORMAL; -- Try NORMAL instead of EXCLUSIVE
+    purchasableParameters[CityCommandTypes.PARAM_PLOT_PURCHASE] = UI.GetInterfaceModeParameter(CityCommandTypes.PARAM_PLOT_PURCHASE);
     
-    local purchasableResults = CityManager.GetOperationTargets(selectedCity, CityOperationTypes.PURCHASE, purchasableParameters);
-    if (purchasableResults and purchasableResults[CityOperationResults.PLOTS]) then
-        print("DetailedAdjacencyPreview: DEBUG - Found " .. #purchasableResults[CityOperationResults.PLOTS] .. " purchasable plots with PURCHASE operation");
+    local purchasableResults = CityManager.GetCommandTargets(selectedCity, CityCommandTypes.PURCHASE, purchasableParameters);
+    if (purchasableResults and purchasableResults[CityCommandResults.PLOTS] and table.count(purchasableResults[CityCommandResults.PLOTS]) > 0) then
+        print("DetailedAdjacencyPreview: Found " .. #purchasableResults[CityCommandResults.PLOTS] .. " purchasable plots using correct CityCommandTypes!");
         -- Add purchasable plots to our list
-        for i, plotID in ipairs(purchasableResults[CityOperationResults.PLOTS]) do
+        for i, plotID in ipairs(purchasableResults[CityCommandResults.PLOTS]) do
             -- Only add if not already in the list
             local alreadyExists = false;
             for j, existingPlotID in ipairs(compatiblePlots) do
@@ -104,11 +103,12 @@ function CalculateReverseAdjacencyForAllTiles(districtInfo)
             end
             if (not alreadyExists) then
                 table.insert(compatiblePlots, plotID);
+                print("DetailedAdjacencyPreview: Added purchasable tile to compatible list: " .. plotID);
             end
         end
-    -- NOTE: Purchasable tile detection limited by Civilization VI modding API
-    -- The game's tile purchase highlighting uses internal logic not accessible to mods
-    -- This mod focuses on immediately placeable tiles with perfect accuracy
+    else
+        print("DetailedAdjacencyPreview: No purchasable plots found with corrected CityCommandTypes");
+    end
     
     -- Clear and populate the compatible tile set for fast lookup
     g_compatibleTileSet = {};
