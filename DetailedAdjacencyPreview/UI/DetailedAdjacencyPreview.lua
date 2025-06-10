@@ -75,6 +75,7 @@ function CalculateReverseAdjacencyForAllTiles(districtInfo)
         return;
     end
     
+    -- Get immediately placeable tiles
     local tResults = CityManager.GetOperationTargets(selectedCity, CityOperationTypes.BUILD, tParameters);
     if (not tResults or not tResults[CityOperationResults.PLOTS]) then
         print("DetailedAdjacencyPreview: No compatible plots found");
@@ -82,6 +83,32 @@ function CalculateReverseAdjacencyForAllTiles(districtInfo)
     end
     
     local compatiblePlots = tResults[CityOperationResults.PLOTS];
+    
+    -- ATTEMPT: Try to get purchasable tiles with different parameters
+    local purchasableParameters = {};
+    purchasableParameters[CityOperationTypes.PARAM_DISTRICT_TYPE] = g_currentDistrictHash;
+    purchasableParameters[CityOperationTypes.PARAM_INSERT_MODE] = CityOperationTypes.VALUE_NORMAL; -- Try NORMAL instead of EXCLUSIVE
+    
+    local purchasableResults = CityManager.GetOperationTargets(selectedCity, CityOperationTypes.PURCHASE, purchasableParameters);
+    if (purchasableResults and purchasableResults[CityOperationResults.PLOTS]) then
+        print("DetailedAdjacencyPreview: DEBUG - Found " .. #purchasableResults[CityOperationResults.PLOTS] .. " purchasable plots with PURCHASE operation");
+        -- Add purchasable plots to our list
+        for i, plotID in ipairs(purchasableResults[CityOperationResults.PLOTS]) do
+            -- Only add if not already in the list
+            local alreadyExists = false;
+            for j, existingPlotID in ipairs(compatiblePlots) do
+                if (plotID == existingPlotID) then
+                    alreadyExists = true;
+                    break;
+                end
+            end
+            if (not alreadyExists) then
+                table.insert(compatiblePlots, plotID);
+            end
+        end
+    -- NOTE: Purchasable tile detection limited by Civilization VI modding API
+    -- The game's tile purchase highlighting uses internal logic not accessible to mods
+    -- This mod focuses on immediately placeable tiles with perfect accuracy
     
     -- Clear and populate the compatible tile set for fast lookup
     g_compatibleTileSet = {};
@@ -95,38 +122,96 @@ function CalculateReverseAdjacencyForAllTiles(districtInfo)
     
     local tilesWithBonuses = 0;
     local totalBonuses = 0;
+    local availableTiles = 0;
+    local purchasableTiles = 0;
+    local bonusesOnAvailable = 0;
+    local bonusesOnPurchasable = 0;
     
     -- Process each compatible tile for reverse adjacency
     for i, plotID in ipairs(compatiblePlots) do
         local plot = Map.GetPlotByIndex(plotID);
         if (plot) then
+            -- Determine tile ownership for display purposes
+            local plotOwner = plot:GetOwner();
+            local cityOwner = selectedCity:GetOwner();
+            local isOwned = (plotOwner == cityOwner);
+            
             local reverseBonuses = CalculateReverseBonusesForTile(plot, districtInfo);
             
             if (#reverseBonuses > 0) then
                 tilesWithBonuses = tilesWithBonuses + 1;
                 totalBonuses = totalBonuses + #reverseBonuses;
                 
-                -- Display reverse bonuses for this tile
-                for j, bonus in ipairs(reverseBonuses) do
-                    print("DetailedAdjacencyPreview: Tile (" .. plot:GetX() .. "," .. plot:GetY() .. ") -> +" .. bonus.Amount .. " " .. bonus.YieldType .. " to " .. bonus.DistrictType);
+                -- Use previously determined ownership status
+                
+                if (isOwned) then
+                    availableTiles = availableTiles + 1;
+                    bonusesOnAvailable = bonusesOnAvailable + #reverseBonuses;
+                else
+                    purchasableTiles = purchasableTiles + 1;
+                    bonusesOnPurchasable = bonusesOnPurchasable + #reverseBonuses;
                 end
                 
-                -- TODO: Display visual overlay for this tile (only for compatible tiles!)
+                -- Display reverse bonuses for this tile with simple status
+                local statusIcon = isOwned and "🟢" or "🟡";
+                local statusText = isOwned and "(owned)" or "(purchasable)";
+                for j, bonus in ipairs(reverseBonuses) do
+                    print("DetailedAdjacencyPreview: " .. statusIcon .. " Tile (" .. plot:GetX() .. "," .. plot:GetY() .. ") -> +" .. bonus.Amount .. " " .. bonus.YieldType .. " to " .. bonus.DistrictType .. " " .. statusText);
+                end
+                
+                -- TODO: Display visual overlay for this tile (differentiate by availability!)
+            else
+                -- Count tiles without bonuses for completeness
+                local plotOwner = plot:GetOwner();
+                local cityOwner = selectedCity:GetOwner();
+                if (plotOwner == cityOwner) then
+                    availableTiles = availableTiles + 1;
+                else
+                    purchasableTiles = purchasableTiles + 1;
+                end
             end
         end
     end
     
-    -- Summary
+    -- Enhanced summary with tile availability breakdown
     if (totalBonuses > 0) then
         print("DetailedAdjacencyPreview: Found " .. totalBonuses .. " reverse bonuses across " .. tilesWithBonuses .. " tiles (out of " .. #compatiblePlots .. " compatible)");
+        if (bonusesOnAvailable > 0) then
+            print("DetailedAdjacencyPreview: 🟢 " .. bonusesOnAvailable .. " bonuses on " .. availableTiles .. " available tiles (immediate placement)");
+        end
+        if (bonusesOnPurchasable > 0) then
+            print("DetailedAdjacencyPreview: 🟡 " .. bonusesOnPurchasable .. " bonuses on " .. purchasableTiles .. " purchasable tiles (gold required)");
+        end
     else
         print("DetailedAdjacencyPreview: No reverse adjacency bonuses found for any compatible tiles");
+        if (availableTiles > 0 or purchasableTiles > 0) then
+            print("DetailedAdjacencyPreview: 🟢 " .. availableTiles .. " available tiles, 🟡 " .. purchasableTiles .. " purchasable tiles");
+        end
     end
+end
+
+-- Simplified tile availability - leverage game's existing logic
+function GetTileAvailabilityStatus(plot, city)
+    local plotOwner = plot:GetOwner();
+    local cityOwner = city:GetOwner();
+    
+    -- Simple check: if same owner, assume available (game handles the complexity)
+    if (plotOwner == cityOwner) then
+        return "available";  -- 🟢 Owned by player (game determines if immediately placeable)
+    end
+    
+    -- If unowned, assume potentially purchasable (game will show if actually purchasable)
+    if (plotOwner == -1) then
+        return "purchasable";  -- 🟡 Unowned (game determines if purchasable)
+    end
+    
+    return "unavailable";  -- 🔴 Owned by someone else
 end
 
 -- Calculate reverse bonuses for a specific tile
 function CalculateReverseBonusesForTile(targetPlot, newDistrictInfo)
     local reverseBonuses = {};
+    local adjacentDistricts = 0;
     
     -- Get all adjacent plots
     for direction = 0, DirectionTypes.NUM_DIRECTION_TYPES - 1, 1 do
@@ -136,6 +221,7 @@ function CalculateReverseBonusesForTile(targetPlot, newDistrictInfo)
             local pDistrict = CityManager.GetDistrictAt(adjacentPlot);
             
             if (pDistrict ~= nil and pDistrict:IsComplete()) then
+                adjacentDistricts = adjacentDistricts + 1;
                 local existingDistrictInfo = GameInfo.Districts[pDistrict:GetType()];
                 if (existingDistrictInfo) then
                     -- Calculate what bonus the existing district would get from our new district
@@ -150,6 +236,8 @@ function CalculateReverseBonusesForTile(targetPlot, newDistrictInfo)
             end
         end
     end
+    
+    -- Note: Some tiles may have adjacent districts but provide no bonuses due to specific adjacency rules
     
     return reverseBonuses;
 end
