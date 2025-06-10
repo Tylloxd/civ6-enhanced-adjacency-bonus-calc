@@ -28,8 +28,13 @@ local g_DistrictAdjacencyProviders = {
     
     -- Government Plaza provides benefits to other districts
     ["DISTRICT_GOVERNMENT"] = {
-        -- Government Plaza provides +1.5 to all districts (we'll handle this specially)
-        ["GENERIC_DISTRICT"] = { ["YIELD_GENERIC"] = 1.5 }
+        ["DISTRICT_INDUSTRIAL_ZONE"] = { ["YIELD_PRODUCTION"] = 2 },
+        ["DISTRICT_CAMPUS"] = { ["YIELD_SCIENCE"] = 2 },
+        ["DISTRICT_COMMERCIAL_HUB"] = { ["YIELD_GOLD"] = 2 },
+        ["DISTRICT_HOLY_SITE"] = { ["YIELD_FAITH"] = 2 },
+        ["DISTRICT_THEATER"] = { ["YIELD_CULTURE"] = 2 },
+        ["DISTRICT_ENTERTAINMENT_COMPLEX"] = { ["YIELD_AMENITY"] = 2 },
+        ["DISTRICT_WATER_ENTERTAINMENT_COMPLEX"] = { ["YIELD_AMENITY"] = 2 }
     },
     
     -- Generic district adjacency (most districts provide +0.5 to each other)
@@ -117,61 +122,102 @@ local g_YieldDisplayInfo = {
 -- Calculate what benefits existing districts would receive from placing a new district
 function CalculateExistingDistrictBenefits(pCity, newDistrictType, targetPlotX, targetPlotY)
     if not pCity or not newDistrictType then
+        print("ERROR: Missing city or district type");
         return {};
     end
     
+    print(string.format("Calculating benefits for %s at (%d,%d) in city %s", 
+        newDistrictType, targetPlotX, targetPlotY, pCity:GetName()));
+    
     local benefitsMap = {};
     local cityPlots = Map.GetCityPlots():GetPurchasedPlots(pCity);
+    
+    print(string.format("Found %d plots in city", #cityPlots));
     
     -- Iterate through all plots in the city
     for i, plotID in ipairs(cityPlots) do
         local pPlot = Map.GetPlotByIndex(plotID);
         if pPlot then
             local pDistrict = pPlot:GetDistrict();
-            if pDistrict and not pDistrict:IsComplete() == false then
-                local existingDistrictType = pDistrict:GetType();
+            if pDistrict and pDistrict:IsComplete() then
+                local existingDistrictType = GameInfo.Districts[pDistrict:GetType()].DistrictType;
                 local districtX, districtY = pPlot:GetX(), pPlot:GetY();
+                
+                print(string.format("Found district %s at (%d,%d)", existingDistrictType, districtX, districtY));
                 
                 -- Check if this existing district is adjacent to the proposed new district location
                 if IsAdjacentPlot(districtX, districtY, targetPlotX, targetPlotY) then
+                    print(string.format("District %s is adjacent to target location", existingDistrictType));
+                    
                     local benefits = GetBenefitsFromNewDistrict(existingDistrictType, newDistrictType);
                     if benefits and next(benefits) then
+                        print("Found benefits!");
                         benefitsMap[plotID] = {
                             DistrictType = existingDistrictType,
                             Benefits = benefits,
                             PlotX = districtX,
                             PlotY = districtY
                         };
+                    else
+                        print("No benefits calculated");
                     end
+                else
+                    print(string.format("District %s is NOT adjacent", existingDistrictType));
                 end
             end
         end
     end
     
+    print(string.format("Total benefits found: %d", GetTableSize(benefitsMap)));
     return benefitsMap;
+end
+
+-- Helper function to count table entries
+function GetTableSize(t)
+    local count = 0;
+    for _ in pairs(t) do
+        count = count + 1;
+    end
+    return count;
 end
 
 -- Get benefits that an existing district would receive from a new district
 function GetBenefitsFromNewDistrict(existingDistrictType, newDistrictType)
     local benefits = {};
     
+    print(string.format("Calculating benefits: %s -> %s", newDistrictType, existingDistrictType));
+    
     -- Check if the new district type provides specific benefits to the existing district
     if g_DistrictAdjacencyProviders[newDistrictType] then
+        print(string.format("Found provider data for %s", newDistrictType));
         local providerBenefits = g_DistrictAdjacencyProviders[newDistrictType][existingDistrictType];
         if providerBenefits then
+            print(string.format("Found specific benefits for %s", existingDistrictType));
             for yieldType, amount in pairs(providerBenefits) do
                 benefits[yieldType] = (benefits[yieldType] or 0) + amount;
+                print(string.format("  Added %s: +%s", yieldType, tostring(amount)));
             end
+        else
+            print(string.format("No specific benefits for %s", existingDistrictType));
         end
+    else
+        print(string.format("No provider data for %s", newDistrictType));
     end
     
     -- Check generic district adjacency bonuses
     if g_DistrictAdjacencyProviders["GENERIC_DISTRICT_ADJACENCY"][existingDistrictType] then
+        print(string.format("Found generic benefits for %s", existingDistrictType));
         local genericBenefits = g_DistrictAdjacencyProviders["GENERIC_DISTRICT_ADJACENCY"][existingDistrictType];
         for yieldType, amount in pairs(genericBenefits) do
             benefits[yieldType] = (benefits[yieldType] or 0) + amount;
+            print(string.format("  Added generic %s: +%s", yieldType, tostring(amount)));
         end
+    else
+        print(string.format("No generic benefits for %s", existingDistrictType));
     end
+    
+    local benefitCount = GetTableSize(benefits);
+    print(string.format("Total benefit types calculated: %d", benefitCount));
     
     return benefits;
 end

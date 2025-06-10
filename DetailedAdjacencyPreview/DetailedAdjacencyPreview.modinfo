@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Mod id="a4f6c8e2-5d1b-4f89-9c3e-8e7f6b5a4c9d" version="1.0.0">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Mod id="a4f6c8e2-5d1b-4f89-9c3e-8e7f6b5a4c9d" version="1">
   <Properties>
     <n>Detailed Adjacency Preview</n>
     <Description>Shows adjacency benefits that existing districts would receive from new district placements during the district placement preview. Enhances strategic city planning by displaying complete adjacency information for optimal district placement decisions.</Description>
@@ -8,15 +8,23 @@
     <AffectsSavedGames>false</AffectsSavedGames>
     <CompatibleVersions>2.0</CompatibleVersions>
   </Properties>
-  <InGameActions>
-    <ImportFiles id="DetailedAdjacencyPreview_UI">
-      <File>UI/DetailedAdjacencyPreview.lua</File>
-      <File>UI/DetailedAdjacencyPreview.xml</File>
-      <File>UI/DetailedAdjacencyPreview_Overlays.lua</File>
-      <File>Scripts/DetailedAdjacencyPreview_Core.lua</File>
-      <File>Scripts/DetailedAdjacencyPreview_Utils.lua</File>
+  <Components>
+    <UserInterface>
+      <Properties>
+        <Context>InGame</Context>
+      </Properties>
+      <Items>
+        <File>UI/DetailedAdjacencyPreview.xml</File>
+      </Items>
+    </UserInterface>
+    <ImportFiles id="DetailedAdjacencyPreview_Scripts">
+      <Items>
+        <File>Scripts/DetailedAdjacencyPreview_Core.lua</File>
+        <File>Scripts/DetailedAdjacencyPreview_Utils.lua</File>
+        <File>UI/DetailedAdjacencyPreview_Overlays.lua</File>
+      </Items>
     </ImportFiles>
-  </InGameActions>
+  </Components>
   <Files>
     <File>UI/DetailedAdjacencyPreview.lua</File>
     <File>UI/DetailedAdjacencyPreview.xml</File>
@@ -25,3 +33,4 @@
     <File>Scripts/DetailedAdjacencyPreview_Utils.lua</File>
   </Files>
 </Mod> 
+

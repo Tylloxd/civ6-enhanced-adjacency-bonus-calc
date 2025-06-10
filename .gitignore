@@ -1,0 +1,35 @@
+# Development Files
+*.tmp
+*.log
+*.bak
+*~
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Civilization VI ModBuddy Files
+*.suo
+*.user
+bin/
+obj/
+*.cache
+
+# Backup Files
+*_backup.*
+*.orig
+
+# Local Test Files
+test_*.lua
+debug_*.xml 

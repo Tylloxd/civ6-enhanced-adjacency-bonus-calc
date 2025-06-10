@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Context>
-  <!-- Load our main UI script in the InGame context -->
-  <InGameUIAddin>
-    <Name>DetailedAdjacencyPreview</Name>
-    <FileName>DetailedAdjacencyPreview.lua</FileName>
-  </InGameUIAddin>
+  <Name>DetailedAdjacencyPreview</Name>
+  <FileName>UI/DetailedAdjacencyPreview.lua</FileName>
 </Context> 
