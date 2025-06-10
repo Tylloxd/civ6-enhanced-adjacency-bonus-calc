@@ -18,6 +18,9 @@
 - ✅ Analysis of official game files confirms our integration strategy is correct
 - ✅ We use the same entry points (`InterfaceModeTypes.DISTRICT_PLACEMENT`) as the native system
 - ✅ We calculate for all compatible tiles at once, just like the native adjacency bonus display
+- ✅ **REVERSE ADJACENCY CALCULATION WORKS**: Successfully detecting and calculating reverse bonuses
+- ⚠️ **NEW ISSUE**: Reverse bonuses showing on ALL adjacent tiles, not just suitable placement tiles
+- ⚠️ **NEW ISSUE**: Mod persists even when disabled in game options
 - We should leverage native functions like `CityManager.GetOperationTargets()` for plot detection
 - We should integrate with the existing `plotInfo.adjacent` visualization system
 
@@ -51,6 +54,7 @@
   - [x] 3.6 Add error handling for edge cases in placement system
   - [x] 3.7 Ensure compatibility with different district placement contexts
   - [x] ✅ **NEW**: 3.8 Verify alignment with native `RealizePlotArtForDistrictPlacement()` system
+  - [x] ✅ **WORKING**: 3.9 Reverse adjacency calculation successfully detects existing districts
 
 - [x] 4.0 Develop Visual Overlay Display System *(In Progress - Need to integrate with native visualization)*
   - [x] 4.1 Create UI overlay components for displaying adjacency benefits
@@ -61,6 +65,14 @@
   - [x] 4.6 Add visual styling consistent with existing game UI
   - [x] 4.7 Optimize overlay rendering performance *(Achieved through single calculation)*
   - [x] 4.8 Add overlay cleanup when exiting district placement mode
+
+- [ ] ⚠️ **NEW**: 4.9 Critical Bug Fixes and Filtering
+  - [ ] 4.9.1 **URGENT**: Filter reverse bonuses to only suitable placement tiles (not all adjacent tiles)
+  - [ ] 4.9.2 **URGENT**: Fix mod persistence when disabled in game options
+  - [ ] 4.9.3 Investigate base game `DistrictPlotIconManager.lua:159` errors
+  - [ ] 4.9.4 Ensure reverse bonuses only display on tiles highlighted by native placement system
+  - [ ] 4.9.5 Validate that occupied tiles (City Center, existing districts) are excluded
+  - [ ] 4.9.6 Test that unsuitable terrain tiles are properly excluded
 
 - [ ] 5.0 Testing and Compatibility Validation
   - [ ] 5.1 Create test scenarios for all base game district combinations
@@ -81,15 +93,17 @@
 
 ## Current Status
 
-**✅ MAJOR MILESTONE ACHIEVED**: Our mod approach is perfectly aligned with Civilization VI's native district placement system. We have:
+**✅ BREAKTHROUGH ACHIEVED**: Reverse adjacency calculation is working correctly! Console output shows:
+- Campus placement: 0 reverse bonuses (correct)
+- Industrial Zone placement: 6 reverse bonuses found (+1 Science to Campus)
 
-1. **Confirmed Perfect Integration**: Our hooks and timing match the native system exactly
-2. **Analyzed Official Code**: Understanding of how the game handles district placement and adjacency
-3. **Identified Key Functions**: Native engine functions we can leverage for better integration
-4. **Working Prototype**: Functional reverse adjacency calculation for all compatible tiles
+**🐛 CRITICAL ISSUES TO ADDRESS**:
+1. **Filtering Problem**: Reverse bonuses showing on all adjacent tiles instead of only suitable placement tiles
+2. **Mod Persistence**: Mod continues running even when disabled in options
+3. **Base Game Errors**: `DistrictPlotIconManager.lua:159` errors appearing (possibly unrelated)
 
-**Next Phase**: Enhance integration with native visualization systems and complete testing.
+**Next Phase**: Fix filtering to only show reverse bonuses on tiles that are actually suitable for district placement.
 
 ---
 
-*Last Updated: After comprehensive analysis of official game files - our approach is validated and perfectly aligned!* 
+*Last Updated: After successful reverse adjacency calculation validation - core logic works, now need proper filtering!* 
