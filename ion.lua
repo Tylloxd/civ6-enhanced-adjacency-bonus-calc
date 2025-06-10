@@ -61,8 +61,8 @@ end
 function CalculateReverseAdjacencyForAllTiles(districtInfo)
     print("DetailedAdjacencyPreview: === CALCULATING REVERSE ADJACENCY FOR ALL TILES ===");
     
-    -- Get the selected city (use same method as native game)
-    local selectedCity = UI.GetHeadSelectedCity();
+    -- Get the selected city
+    local selectedCity = Cities.GetCityInOperationRange();
     if (not selectedCity) then
         print("DetailedAdjacencyPreview: No selected city found!");
         return;
@@ -70,20 +70,11 @@ function CalculateReverseAdjacencyForAllTiles(districtInfo)
     
     g_selectedCity = selectedCity;
     print("DetailedAdjacencyPreview: Selected city: " .. Locale.Lookup(selectedCity:GetName()));
-    print("DetailedAdjacencyPreview: District hash: " .. tostring(g_currentDistrictHash));
-    print("DetailedAdjacencyPreview: CityManager available: " .. tostring(CityManager ~= nil));
-    print("DetailedAdjacencyPreview: GetOperationTargets available: " .. tostring(CityManager and CityManager.GetOperationTargets ~= nil));
     
     -- Use the NATIVE system to get compatible plots (same as StrategicView_MapPlacement.lua)
     local tParameters = {};
     tParameters[CityOperationTypes.PARAM_DISTRICT_TYPE] = g_currentDistrictHash;
     tParameters[CityOperationTypes.PARAM_INSERT_MODE] = CityOperationTypes.VALUE_EXCLUSIVE;
-    
-    -- Check if CityManager functions exist
-    if (not CityManager or not CityManager.GetOperationTargets) then
-        print("DetailedAdjacencyPreview: CityManager.GetOperationTargets not available!");
-        return;
-    end
     
     local tResults = CityManager.GetOperationTargets(selectedCity, CityOperationTypes.BUILD, tParameters);
     if (not tResults or not tResults[CityOperationResults.PLOTS]) then
@@ -140,79 +131,47 @@ end
 function CalculateReverseBonusesForTile(targetPlot, newDistrictInfo)
     local reverseBonuses = {};
     
-    print("DetailedAdjacencyPreview: Checking adjacent plots for tile (" .. targetPlot:GetX() .. "," .. targetPlot:GetY() .. ")");
-    
     -- Get all adjacent plots
     for direction = 0, DirectionTypes.NUM_DIRECTION_TYPES - 1, 1 do
         local adjacentPlot = Map.GetAdjacentPlot(targetPlot:GetX(), targetPlot:GetY(), direction);
         if (adjacentPlot) then
-            print("DetailedAdjacencyPreview: Adjacent plot (" .. adjacentPlot:GetX() .. "," .. adjacentPlot:GetY() .. ")");
             
-            -- Check if this adjacent plot has an existing district (use native method)
-            local pDistrict = CityManager.GetDistrictAt(adjacentPlot);
-            print("DetailedAdjacencyPreview: District object on adjacent plot: " .. tostring(pDistrict));
-            
-            if (pDistrict ~= nil and pDistrict:IsComplete()) then
-                local existingDistrictInfo = GameInfo.Districts[pDistrict:GetType()];
+            -- Check if this adjacent plot has an existing district
+            local existingDistrictType = adjacentPlot:GetDistrictType();
+            if (existingDistrictType ~= -1) then
+                local existingDistrictInfo = GameInfo.Districts[existingDistrictType];
                 if (existingDistrictInfo) then
-                    print("DetailedAdjacencyPreview: Found existing district: " .. existingDistrictInfo.DistrictType);
                     
                     -- Calculate what bonus the existing district would get from our new district
                     local bonus = CalculateAdjacencyBonus(existingDistrictInfo, newDistrictInfo);
                     if (bonus and bonus.Amount > 0) then
-                        print("DetailedAdjacencyPreview: Calculated bonus: +" .. bonus.Amount .. " " .. bonus.YieldType);
                         bonus.DistrictType = existingDistrictInfo.DistrictType;
                         bonus.TargetX = adjacentPlot:GetX();
                         bonus.TargetY = adjacentPlot:GetY();
                         table.insert(reverseBonuses, bonus);
-                    else
-                        print("DetailedAdjacencyPreview: No bonus calculated for this district combination");
                     end
-                else
-                    print("DetailedAdjacencyPreview: Could not find district info for type: " .. tostring(pDistrict:GetType()));
                 end
             end
         end
     end
     
-    print("DetailedAdjacencyPreview: Found " .. #reverseBonuses .. " reverse bonuses for this tile");
     return reverseBonuses;
 end
 
 -- Calculate adjacency bonus between two districts
 function CalculateAdjacencyBonus(receivingDistrictInfo, givingDistrictInfo)
-    print("DetailedAdjacencyPreview: Calculating adjacency bonus: " .. receivingDistrictInfo.DistrictType .. " receiving from " .. givingDistrictInfo.DistrictType);
-    
     -- Query the adjacency rules for the receiving district
-    
-    -- Query the adjacency rules for the receiving district using the correct database structure
     for row in GameInfo.District_Adjacencies() do
-        if (row.DistrictType == receivingDistrictInfo.DistrictType) then
-            -- Access the yield change data from the reference table
-            local yieldChangeRef = row.YieldChangeReference;
-            if (yieldChangeRef) then
-                -- Check if this rule involves district adjacency by looking at the YieldChangeId
-                local yieldChangeId = row.YieldChangeId or "";
-                
-                -- Look for district-related adjacency rules (generic district bonus)
-                if (string.find(yieldChangeId, "District") or string.find(yieldChangeId, "DISTRICT")) then
-                    -- Try to get yield information from the reference
-                    local yieldType = yieldChangeRef.YieldType;
-                    local yieldChange = yieldChangeRef.YieldChange;
-                    
-                    if (yieldType and yieldChange) then
-                        print("DetailedAdjacencyPreview: Found district adjacency: " .. row.DistrictType .. " gets +" .. yieldChange .. " " .. yieldType .. " from districts");
-                        return {
-                            Amount = yieldChange,
-                            YieldType = yieldType
-                        };
-                    end
-                end
-            end
+        if (row.DistrictType == receivingDistrictInfo.DistrictType and 
+            row.AdjacentDistrict == givingDistrictInfo.DistrictType) then
+            
+            return {
+                Amount = row.YieldChange,
+                YieldType = row.YieldType
+            };
         end
     end
     
-    print("DetailedAdjacencyPreview: No adjacency rule found for this combination");
     return nil;
 end
 
