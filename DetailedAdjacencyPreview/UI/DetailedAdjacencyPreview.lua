@@ -1,7 +1,7 @@
 -- Detailed Adjacency Preview - Integrated District Placement System
 -- This mod calculates reverse adjacency bonuses for all compatible tiles during district placement
 
-print("=== DETAILED ADJACENCY PREVIEW MOD: Starting to load ===");
+print("DetailedAdjacencyPreview: Mod loaded successfully");
 
 -- ===========================================================================
 -- GLOBAL VARIABLES
@@ -18,14 +18,11 @@ local g_compatibleTileSet = {}; -- Track which tiles are actually compatible for
 
 -- Track interface mode changes to detect district placement
 function OnInterfaceModeChanged(oldMode, newMode)
-    print("DetailedAdjacencyPreview: Interface mode changed from " .. tostring(oldMode) .. " to " .. tostring(newMode));
-    print("DetailedAdjacencyPreview: DISTRICT_PLACEMENT mode = " .. tostring(InterfaceModeTypes.DISTRICT_PLACEMENT));
-    
     if (newMode == InterfaceModeTypes.DISTRICT_PLACEMENT) then
-        print("DetailedAdjacencyPreview: Entered district placement mode!");
+        print("DetailedAdjacencyPreview: Entered district placement mode");
         OnDistrictPlacementEntered();
     elseif (oldMode == InterfaceModeTypes.DISTRICT_PLACEMENT) then
-        print("DetailedAdjacencyPreview: Exited district placement mode!");
+        print("DetailedAdjacencyPreview: Exited district placement mode");
         OnDistrictPlacementExited();
     end
 end
@@ -36,12 +33,11 @@ function OnDistrictPlacementEntered()
     
     -- Get the district type being placed
     g_currentDistrictHash = UI.GetInterfaceModeParameter(CityOperationTypes.PARAM_DISTRICT_TYPE);
-    print("DetailedAdjacencyPreview: District hash parameter = " .. tostring(g_currentDistrictHash));
     
     if (g_currentDistrictHash) then
         local districtInfo = GameInfo.Districts[g_currentDistrictHash];
         if (districtInfo) then
-            print("DetailedAdjacencyPreview: Placing district: " .. districtInfo.DistrictType);
+            print("DetailedAdjacencyPreview: Calculating reverse adjacency for " .. districtInfo.DistrictType);
             
             -- Calculate reverse adjacency for ALL compatible tiles
             CalculateReverseAdjacencyForAllTiles(districtInfo);
@@ -59,20 +55,14 @@ end
 
 -- Calculate reverse adjacency bonuses for all compatible tiles
 function CalculateReverseAdjacencyForAllTiles(districtInfo)
-    print("DetailedAdjacencyPreview: === CALCULATING REVERSE ADJACENCY FOR ALL TILES ===");
-    
     -- Get the selected city (use same method as native game)
     local selectedCity = UI.GetHeadSelectedCity();
     if (not selectedCity) then
-        print("DetailedAdjacencyPreview: No selected city found!");
+        print("DetailedAdjacencyPreview: Error - No selected city found");
         return;
     end
     
     g_selectedCity = selectedCity;
-    print("DetailedAdjacencyPreview: Selected city: " .. Locale.Lookup(selectedCity:GetName()));
-    print("DetailedAdjacencyPreview: District hash: " .. tostring(g_currentDistrictHash));
-    print("DetailedAdjacencyPreview: CityManager available: " .. tostring(CityManager ~= nil));
-    print("DetailedAdjacencyPreview: GetOperationTargets available: " .. tostring(CityManager and CityManager.GetOperationTargets ~= nil));
     
     -- Use the NATIVE system to get compatible plots (same as StrategicView_MapPlacement.lua)
     local tParameters = {};
@@ -81,18 +71,17 @@ function CalculateReverseAdjacencyForAllTiles(districtInfo)
     
     -- Check if CityManager functions exist
     if (not CityManager or not CityManager.GetOperationTargets) then
-        print("DetailedAdjacencyPreview: CityManager.GetOperationTargets not available!");
+        print("DetailedAdjacencyPreview: Error - CityManager.GetOperationTargets not available");
         return;
     end
     
     local tResults = CityManager.GetOperationTargets(selectedCity, CityOperationTypes.BUILD, tParameters);
     if (not tResults or not tResults[CityOperationResults.PLOTS]) then
-        print("DetailedAdjacencyPreview: No compatible plots found!");
+        print("DetailedAdjacencyPreview: No compatible plots found");
         return;
     end
     
     local compatiblePlots = tResults[CityOperationResults.PLOTS];
-    print("DetailedAdjacencyPreview: Found " .. #compatiblePlots .. " compatible plots using native system");
     
     -- Clear and populate the compatible tile set for fast lookup
     g_compatibleTileSet = {};
@@ -105,86 +94,68 @@ function CalculateReverseAdjacencyForAllTiles(districtInfo)
     end
     
     local tilesWithBonuses = 0;
+    local totalBonuses = 0;
     
     -- Process each compatible tile for reverse adjacency
     for i, plotID in ipairs(compatiblePlots) do
         local plot = Map.GetPlotByIndex(plotID);
         if (plot) then
-            print("DetailedAdjacencyPreview: --- Compatible tile at (" .. plot:GetX() .. "," .. plot:GetY() .. ") ---");
-            
             local reverseBonuses = CalculateReverseBonusesForTile(plot, districtInfo);
             
             if (#reverseBonuses > 0) then
                 tilesWithBonuses = tilesWithBonuses + 1;
-                print("DetailedAdjacencyPreview: *** TILE (" .. plot:GetX() .. "," .. plot:GetY() .. ") HAS " .. #reverseBonuses .. " REVERSE BONUSES ***");
+                totalBonuses = totalBonuses + #reverseBonuses;
                 
+                -- Display reverse bonuses for this tile
                 for j, bonus in ipairs(reverseBonuses) do
-                    print("DetailedAdjacencyPreview: -> +" .. bonus.Amount .. " [ICON_" .. bonus.YieldType .. "] " .. bonus.YieldType .. " to " .. bonus.DistrictType .. " at (" .. bonus.TargetX .. "," .. bonus.TargetY .. ")");
+                    print("DetailedAdjacencyPreview: Tile (" .. plot:GetX() .. "," .. plot:GetY() .. ") -> +" .. bonus.Amount .. " " .. bonus.YieldType .. " to " .. bonus.DistrictType);
                 end
                 
                 -- TODO: Display visual overlay for this tile (only for compatible tiles!)
-                
-            else
-                print("DetailedAdjacencyPreview: No reverse bonuses for this tile");
             end
         end
     end
     
-    print("DetailedAdjacencyPreview: === SUMMARY ===");
-    print("DetailedAdjacencyPreview: Compatible tiles: " .. #compatiblePlots);
-    print("DetailedAdjacencyPreview: Tiles with reverse bonuses: " .. tilesWithBonuses);
-    print("DetailedAdjacencyPreview: === END CALCULATION ===");
+    -- Summary
+    if (totalBonuses > 0) then
+        print("DetailedAdjacencyPreview: Found " .. totalBonuses .. " reverse bonuses across " .. tilesWithBonuses .. " tiles (out of " .. #compatiblePlots .. " compatible)");
+    else
+        print("DetailedAdjacencyPreview: No reverse adjacency bonuses found for any compatible tiles");
+    end
 end
 
 -- Calculate reverse bonuses for a specific tile
 function CalculateReverseBonusesForTile(targetPlot, newDistrictInfo)
     local reverseBonuses = {};
     
-    print("DetailedAdjacencyPreview: Checking adjacent plots for tile (" .. targetPlot:GetX() .. "," .. targetPlot:GetY() .. ")");
-    
     -- Get all adjacent plots
     for direction = 0, DirectionTypes.NUM_DIRECTION_TYPES - 1, 1 do
         local adjacentPlot = Map.GetAdjacentPlot(targetPlot:GetX(), targetPlot:GetY(), direction);
         if (adjacentPlot) then
-            print("DetailedAdjacencyPreview: Adjacent plot (" .. adjacentPlot:GetX() .. "," .. adjacentPlot:GetY() .. ")");
-            
             -- Check if this adjacent plot has an existing district (use native method)
             local pDistrict = CityManager.GetDistrictAt(adjacentPlot);
-            print("DetailedAdjacencyPreview: District object on adjacent plot: " .. tostring(pDistrict));
             
             if (pDistrict ~= nil and pDistrict:IsComplete()) then
                 local existingDistrictInfo = GameInfo.Districts[pDistrict:GetType()];
                 if (existingDistrictInfo) then
-                    print("DetailedAdjacencyPreview: Found existing district: " .. existingDistrictInfo.DistrictType);
-                    
                     -- Calculate what bonus the existing district would get from our new district
                     local bonus = CalculateAdjacencyBonus(existingDistrictInfo, newDistrictInfo);
                     if (bonus and bonus.Amount > 0) then
-                        print("DetailedAdjacencyPreview: Calculated bonus: +" .. bonus.Amount .. " " .. bonus.YieldType);
                         bonus.DistrictType = existingDistrictInfo.DistrictType;
                         bonus.TargetX = adjacentPlot:GetX();
                         bonus.TargetY = adjacentPlot:GetY();
                         table.insert(reverseBonuses, bonus);
-                    else
-                        print("DetailedAdjacencyPreview: No bonus calculated for this district combination");
                     end
-                else
-                    print("DetailedAdjacencyPreview: Could not find district info for type: " .. tostring(pDistrict:GetType()));
                 end
             end
         end
     end
     
-    print("DetailedAdjacencyPreview: Found " .. #reverseBonuses .. " reverse bonuses for this tile");
     return reverseBonuses;
 end
 
 -- Calculate adjacency bonus between two districts
 function CalculateAdjacencyBonus(receivingDistrictInfo, givingDistrictInfo)
-    print("DetailedAdjacencyPreview: Calculating adjacency bonus: " .. receivingDistrictInfo.DistrictType .. " receiving from " .. givingDistrictInfo.DistrictType);
-    
-    -- Query the adjacency rules for the receiving district
-    
     -- Query the adjacency rules for the receiving district using the correct database structure
     for row in GameInfo.District_Adjacencies() do
         if (row.DistrictType == receivingDistrictInfo.DistrictType) then
@@ -201,7 +172,6 @@ function CalculateAdjacencyBonus(receivingDistrictInfo, givingDistrictInfo)
                     local yieldChange = yieldChangeRef.YieldChange;
                     
                     if (yieldType and yieldChange) then
-                        print("DetailedAdjacencyPreview: Found district adjacency: " .. row.DistrictType .. " gets +" .. yieldChange .. " " .. yieldType .. " from districts");
                         return {
                             Amount = yieldChange,
                             YieldType = yieldType
@@ -212,7 +182,6 @@ function CalculateAdjacencyBonus(receivingDistrictInfo, givingDistrictInfo)
         end
     end
     
-    print("DetailedAdjacencyPreview: No adjacency rule found for this combination");
     return nil;
 end
 
@@ -223,5 +192,4 @@ end
 -- Register for interface mode change events
 Events.InterfaceModeChanged.Add(OnInterfaceModeChanged);
 
-print("=== DETAILED ADJACENCY PREVIEW MOD: Loaded successfully ==="); 
-print("=== DETAILED ADJACENCY PREVIEW MOD: FULLY LOADED ==="); 
+print("DetailedAdjacencyPreview: Event handlers registered - ready for district placement"); 
