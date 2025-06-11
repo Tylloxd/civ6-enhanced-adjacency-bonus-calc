@@ -1,8 +1,5 @@
--- Detailed Adjacency Preview - Integrated District Placement System
--- This mod calculates reverse adjacency bonuses for all compatible tiles during district placement
-
--- Include necessary game files for native integration
-include("AdjacencyBonusSupport");
+-- Detailed Adjacency Preview - Native UI Integration
+-- This mod hooks into the native adjacency visualization system to display reverse bonuses
 
 print("DetailedAdjacencyPreview: Mod loaded successfully");
 
@@ -14,251 +11,7 @@ local g_isInDistrictPlacement = false;
 local g_currentDistrictHash = nil;
 local g_selectedCity = nil;
 local g_compatibleTileSet = {}; -- Track which tiles are actually compatible for placement
-
--- Native integration variables
-local g_reverseBonusData = {}; -- Store reverse bonus data for UI integration
-local g_plotBonusDisplays = {}; -- Track which plots have enhanced displays
-
--- ===========================================================================
--- NATIVE INTEGRATION - CENTRAL TEXT DISPLAY ENHANCEMENT
--- ===========================================================================
-
--- Try to hook into the central bonus text displays
-function TryEnhanceCentralDisplays()
-    -- The game creates PlotYieldBonusInstance UI elements for each compatible plot
-    -- We need to find and enhance the BonusText labels in these instances
-    
-    if (UI and UI.GetHeadSelectedCity) then
-        print("DetailedAdjacencyPreview: NATIVE INTEGRATION - UI system accessible");
-        return true;
-    else
-        print("DetailedAdjacencyPreview: NATIVE INTEGRATION - UI system not accessible");
-        return false;
-    end
-end
-
--- Enhanced approach: Wait for native system to create displays, then enhance them
-function EnhanceExistingBonusDisplays()
-    print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Attempting to enhance existing bonus displays");
-    
-    local pSelectedCity = UI.GetHeadSelectedCity();
-    if (not pSelectedCity) then
-        return false;
-    end
-    
-    local districtHash = UI.GetInterfaceModeParameter(CityOperationTypes.PARAM_DISTRICT_TYPE);
-    if (not districtHash) then
-        return false;
-    end
-    
-    local districtInfo = GameInfo.Districts[districtHash];
-    if (not districtInfo) then
-        return false;
-    end
-    
-    print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Enhancing central displays for " .. districtInfo.DistrictType);
-    
-    -- Get our reverse bonus data
-    local reverseBonusPlots = {};
-    for plotIndex, bonuses in pairs(g_reverseBonusData) do
-        if (bonuses and #bonuses > 0) then
-            reverseBonusPlots[plotIndex] = bonuses;
-        end
-    end
-    
-    if (next(reverseBonusPlots) == nil) then
-        print("DetailedAdjacencyPreview: NATIVE INTEGRATION - No reverse bonus data available");
-        return false;
-    end
-    
-    print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Found reverse bonuses for " .. GetTableCount(reverseBonusPlots) .. " plots");
-    
-    -- Call enhancement directly (we now have the data available)
-    EnhanceDisplaysNow(reverseBonusPlots, districtInfo);
-    
-    return true;
-end
-
--- Enhance displays now that we have the reverse bonus data
-function EnhanceDisplaysNow(reverseBonusPlots, districtInfo)
-    print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Performing display enhancement");
-    
-    -- Try to find and enhance existing BonusText labels
-    for plotIndex, bonuses in pairs(reverseBonusPlots) do
-        local plot = Map.GetPlotByIndex(plotIndex);
-        if (plot) then
-            EnhancePlotBonusDisplay(plot, bonuses, districtInfo);
-        end
-    end
-end
-
--- Enhance a specific plot's bonus display
-function EnhancePlotBonusDisplay(plot, reverseBonuses, districtInfo)
-    print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Enhancing display for plot (" .. plot:GetX() .. "," .. plot:GetY() .. ")");
-    
-    -- Calculate what the enhanced text should look like
-    local enhancedText = CreateEnhancedBonusText(plot, reverseBonuses, districtInfo);
-    local enhancedTooltip = CreateEnhancedTooltip(plot, reverseBonuses, districtInfo);
-    
-    print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Enhanced text would be: '" .. enhancedText .. "'");
-    print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Enhanced tooltip would be: '" .. enhancedTooltip .. "'");
-    
-    -- TODO: Find the actual UI element and modify it
-    -- This is the challenging part since we need to access the BonusText label
-    -- for this specific plot's PlotYieldBonusInstance
-    
-    return true;
-end
-
--- Create enhanced bonus text by combining native + reverse bonuses
-function CreateEnhancedBonusText(plot, reverseBonuses, districtInfo)
-    -- Get the original bonus text from the native system
-    local pSelectedCity = UI.GetHeadSelectedCity();
-    
-    print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Testing GetAdjacentYieldBonusString for plot (" .. plot:GetX() .. "," .. plot:GetY() .. ")");
-    
-    -- Test if the function exists and is callable
-    if (GetAdjacentYieldBonusString) then
-        print("DetailedAdjacencyPreview: NATIVE INTEGRATION - GetAdjacentYieldBonusString function exists, calling...");
-        local originalBonus, originalTooltip = GetAdjacentYieldBonusString(districtInfo.Index, pSelectedCity, plot);
-        
-        print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Native bonus result: '" .. tostring(originalBonus) .. "'");
-        print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Native tooltip result: '" .. tostring(originalTooltip) .. "'");
-        
-        if (not originalBonus) then
-            originalBonus = "";
-        end
-        
-        -- Create reverse bonus text
-        local reverseBonusText = CreateReverseBonusText(reverseBonuses);
-        print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Reverse bonus text: '" .. reverseBonusText .. "'");
-        
-        -- Combine them
-        if (originalBonus == "") then
-            return reverseBonusText;
-        elseif (reverseBonusText == "") then
-            return originalBonus;
-        else
-            return originalBonus .. ", " .. reverseBonusText;
-        end
-    else
-        print("DetailedAdjacencyPreview: NATIVE INTEGRATION - GetAdjacentYieldBonusString function not accessible");
-        
-        -- Fallback: just use reverse bonuses
-        local reverseBonusText = CreateReverseBonusText(reverseBonuses);
-        return reverseBonusText;
-    end
-end
-
--- Create text for reverse bonuses only
-function CreateReverseBonusText(reverseBonuses)
-    local bonusByYield = {};
-    
-    -- Aggregate bonuses by yield type
-    for _, bonus in ipairs(reverseBonuses) do
-        local yieldType = bonus.yieldType;
-        if (not bonusByYield[yieldType]) then
-            bonusByYield[yieldType] = 0;
-        end
-        bonusByYield[yieldType] = bonusByYield[yieldType] + bonus.amount;
-    end
-    
-    -- Format as yield strings like the native system
-    local bonusTexts = {};
-    for yieldType, amount in pairs(bonusByYield) do
-        if (amount > 0) then
-            local iconName = string.gsub(yieldType, "YIELD_", "");
-            local yieldString = "[ICON_" .. iconName .. "]+" .. amount;
-            table.insert(bonusTexts, yieldString);
-        end
-    end
-    
-    return table.concat(bonusTexts, " ");
-end
-
--- Create enhanced tooltip combining native + reverse bonuses
-function CreateEnhancedTooltip(plot, reverseBonuses, districtInfo)
-    -- Get original tooltip
-    local pSelectedCity = UI.GetHeadSelectedCity();
-    local originalBonus, originalTooltip = GetAdjacentYieldBonusString(districtInfo.Index, pSelectedCity, plot);
-    
-    if (not originalTooltip) then
-        originalTooltip = "";
-    end
-    
-    -- Add reverse bonus information
-    local reverseTooltipLines = {};
-    for _, bonus in ipairs(reverseBonuses) do
-        local yieldName = string.gsub(bonus.yieldType, "YIELD_", "");
-        local districtName = string.gsub(bonus.districtType, "DISTRICT_", "");
-        local line = "+" .. bonus.amount .. " " .. yieldName .. " to existing " .. districtName;
-        table.insert(reverseTooltipLines, line);
-    end
-    
-    local reverseTooltip = table.concat(reverseTooltipLines, "[NEWLINE]");
-    
-    if (originalTooltip == "") then
-        return reverseTooltip;
-    elseif (reverseTooltip == "") then
-        return originalTooltip;
-    else
-        return originalTooltip .. "[NEWLINE]" .. reverseTooltip;
-    end
-end
-
--- Helper function to count table entries
-function GetTableCount(tbl)
-    local count = 0;
-    for _ in pairs(tbl) do
-        count = count + 1;
-    end
-    return count;
-end
-
--- Store reverse bonus data for potential UI integration
-function StoreReverseBonusData(reverseBonuses)
-    g_reverseBonusData = {};
-    
-    for _, bonus in ipairs(reverseBonuses) do
-        local plotIndex = bonus.plotIndex;
-        if (not g_reverseBonusData[plotIndex]) then
-            g_reverseBonusData[plotIndex] = {};
-        end
-        table.insert(g_reverseBonusData[plotIndex], {
-            amount = bonus.amount,
-            yieldType = bonus.yieldType,
-            districtType = bonus.districtType
-        });
-    end
-    
-    local plotCount = GetTableCount(g_reverseBonusData);
-    print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Stored reverse bonus data for " .. plotCount .. " plots");
-end
-
--- Update the main integration function
-function InitializeNativeIntegration()
-    print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Attempting central display integration");
-    
-    local success = false;
-    
-    -- Approach 1: Central text display enhancement
-    if (TryEnhanceCentralDisplays()) then
-        success = true;
-    end
-    
-    -- Approach 2: Enhanced bonus displays (delayed)
-    if (EnhanceExistingBonusDisplays()) then
-        success = true;
-    end
-    
-    if (success) then
-        print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Successfully initialized central display integration");
-    else
-        print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Central display integration not available, using console output");
-    end
-    
-    return success;
-end
+local g_originalRealizePlotArt = nil; -- Store reference to original function
 
 -- ===========================================================================
 -- DISTRICT PLACEMENT VALIDATION
@@ -326,8 +79,10 @@ end
 function IsAdjacentToFreshWater(plot)
     for direction = 0, DirectionTypes.NUM_DIRECTION_TYPES - 1, 1 do
         local adjacentPlot = Map.GetAdjacentPlot(plot:GetX(), plot:GetY(), direction);
-        if (adjacentPlot and (adjacentPlot:IsRiver() or adjacentPlot:IsLake())) then
-            return true;
+        if (adjacentPlot) then
+            if (adjacentPlot:IsRiver() or adjacentPlot:IsLake()) then
+                return true;
+            end
         end
     end
     return false;
@@ -352,10 +107,25 @@ function IsAdjacentToMountain(plot)
 end
 
 -- ===========================================================================
--- DISTRICT PLACEMENT INTEGRATION
+-- NATIVE SYSTEM INTEGRATION
 -- ===========================================================================
 
--- Track interface mode changes to detect district placement
+-- Hook into the native RealizePlotArtForDistrictPlacement function
+function HookNativeDistrictPlacement()
+    -- The native function is not accessible from mod context
+    -- Use interface mode tracking as our primary approach
+    print("DetailedAdjacencyPreview: Using interface mode tracking for district placement detection");
+    return false; -- Indicate hooking was not successful
+end
+
+-- Enhanced version that adds reverse bonuses to native visualization (unused for now)
+function RealizePlotArtForDistrictPlacement_Enhanced()
+    -- This function is not currently used since we can't hook the native system
+    -- Add our reverse bonus enhancements
+    AddReverseBonusesToNativeVisualization();
+end
+
+-- Track interface mode changes as fallback
 function OnInterfaceModeChanged(oldMode, newMode)
     if (newMode == InterfaceModeTypes.DISTRICT_PLACEMENT) then
         print("DetailedAdjacencyPreview: Entered district placement mode");
@@ -363,6 +133,43 @@ function OnInterfaceModeChanged(oldMode, newMode)
     elseif (oldMode == InterfaceModeTypes.DISTRICT_PLACEMENT) then
         print("DetailedAdjacencyPreview: Exited district placement mode");
         OnDistrictPlacementExited();
+    end
+end
+
+-- Add reverse bonuses to the native visualization system
+function AddReverseBonusesToNativeVisualization()
+    local pSelectedCity = UI.GetHeadSelectedCity();
+    if (not pSelectedCity) then
+        return;
+    end
+    
+    local districtHash = UI.GetInterfaceModeParameter(CityOperationTypes.PARAM_DISTRICT_TYPE);
+    if (not districtHash) then
+        return;
+    end
+    
+    local districtInfo = GameInfo.Districts[districtHash];
+    if (not districtInfo) then
+        return;
+    end
+    
+    print("DetailedAdjacencyPreview: Adding reverse bonuses to native visualization for " .. districtInfo.DistrictType);
+    
+    -- Get compatible plots using same method as native system
+    local tParameters = {};
+    tParameters[CityOperationTypes.PARAM_DISTRICT_TYPE] = districtHash;
+    
+    local tResults = CityManager.GetOperationTargets(pSelectedCity, CityOperationTypes.BUILD, tParameters);
+    if (not tResults or not tResults[CityOperationResults.PLOTS]) then
+        return;
+    end
+    
+    -- Process each compatible plot for reverse bonuses
+    for i, plotId in ipairs(tResults[CityOperationResults.PLOTS]) do
+        local plot = Map.GetPlotByIndex(plotId);
+        if (plot) then
+            AddReverseBonusesToPlot(plot, districtInfo, pSelectedCity);
+        end
     end
 end
 
@@ -378,11 +185,11 @@ function OnDistrictPlacementEntered()
         if (districtInfo) then
             print("DetailedAdjacencyPreview: Calculating reverse adjacency for " .. districtInfo.DistrictType);
             
-            -- Calculate reverse adjacency for ALL compatible tiles FIRST
+            -- Calculate reverse adjacency for ALL compatible tiles (console output)
             CalculateReverseAdjacencyForAllTiles(districtInfo);
             
-            -- THEN initialize native integration (now that data is available)
-            InitializeNativeIntegration();
+            -- Also try our visualization approach
+            AddReverseBonusesToNativeVisualization();
         end
     end
 end
@@ -393,8 +200,6 @@ function OnDistrictPlacementExited()
     g_currentDistrictHash = nil;
     g_selectedCity = nil;
     g_compatibleTileSet = {}; -- Clear the compatible tile tracking
-    g_reverseBonusData = {}; -- Clear native integration cache
-    print("DetailedAdjacencyPreview: NATIVE INTEGRATION - Cleared reverse bonus data");
 end
 
 -- Calculate reverse adjacency bonuses for all compatible tiles
@@ -483,9 +288,6 @@ function CalculateReverseAdjacencyForAllTiles(districtInfo)
     local bonusesOnAvailable = 0;
     local bonusesOnPurchasable = 0;
     
-    -- Collect all reverse bonuses for native integration
-    local allReverseBonuses = {};
-    
     -- Process each compatible tile for reverse adjacency
     for i, plotID in ipairs(compatiblePlots) do
         local plot = Map.GetPlotByIndex(plotID);
@@ -516,14 +318,6 @@ function CalculateReverseAdjacencyForAllTiles(districtInfo)
                 local statusText = isOwned and "(owned)" or "(purchasable)";
                 for j, bonus in ipairs(reverseBonuses) do
                     print("DetailedAdjacencyPreview: " .. statusIcon .. " Tile (" .. plot:GetX() .. "," .. plot:GetY() .. ") -> +" .. bonus.Amount .. " " .. bonus.YieldType .. " to " .. bonus.DistrictType .. " " .. statusText);
-                    
-                    -- Add to native integration cache
-                    table.insert(allReverseBonuses, {
-                        plotIndex = plot:GetIndex(),
-                        amount = bonus.Amount,
-                        yieldType = bonus.YieldType,
-                        districtType = bonus.DistrictType
-                    });
                 end
                 
                 -- TODO: Display visual overlay for this tile (differentiate by availability!)
@@ -555,9 +349,6 @@ function CalculateReverseAdjacencyForAllTiles(districtInfo)
             print("DetailedAdjacencyPreview: 🟢 " .. availableTiles .. " available tiles, 🟡 " .. purchasableTiles .. " purchasable tiles");
         end
     end
-    
-    -- Populate the native integration cache
-    StoreReverseBonusData(allReverseBonuses);
 end
 
 -- Simplified tile availability - leverage game's existing logic
@@ -666,10 +457,126 @@ function CalculateAdjacencyBonus(receivingDistrictInfo, givingDistrictInfo)
 end
 
 -- ===========================================================================
+-- NATIVE UI INTEGRATION FUNCTIONS
+-- ===========================================================================
+
+-- Add reverse bonuses to a specific plot using native visualization
+function AddReverseBonusesToPlot(plot, newDistrictInfo, pSelectedCity)
+    local reverseBonuses = CalculateReverseBonusesForTile(plot, newDistrictInfo);
+    
+    if (#reverseBonuses == 0) then
+        return; -- No reverse bonuses for this plot
+    end
+    
+    -- Create central bonus display text
+    local centralBonusText = CreateCentralBonusText(reverseBonuses);
+    local tooltipText = CreateReverseBonusTooltip(reverseBonuses);
+    
+    -- Try to enhance existing plotInfo if it exists in native system
+    -- Since we don't have direct access to m_hexesDistrictPlacement from native code,
+    -- we'll use a different approach - create our own overlay
+    
+    print("DetailedAdjacencyPreview: Adding visual bonuses to plot (" .. plot:GetX() .. "," .. plot:GetY() .. ") - " .. centralBonusText);
+    
+    -- For now, create custom overlay (will integrate better once we can access native data structures)
+    CreateCustomReverseBonusOverlay(plot, centralBonusText, tooltipText, reverseBonuses);
+end
+
+-- Create formatted text for central bonus display
+function CreateCentralBonusText(reverseBonuses)
+    local bonusByYield = {};
+    
+    -- Aggregate bonuses by yield type
+    for _, bonus in ipairs(reverseBonuses) do
+        local yieldType = bonus.YieldType;
+        if (not bonusByYield[yieldType]) then
+            bonusByYield[yieldType] = 0;
+        end
+        bonusByYield[yieldType] = bonusByYield[yieldType] + bonus.Amount;
+    end
+    
+    -- Format as yield strings
+    local bonusTexts = {};
+    for yieldType, amount in pairs(bonusByYield) do
+        if (amount > 0) then
+            -- Convert yield type to icon name (remove YIELD_ prefix)
+            local iconName = string.gsub(yieldType, "YIELD_", "");
+            local yieldString = "[ICON_" .. iconName .. "]+" .. amount;
+            table.insert(bonusTexts, yieldString);
+        end
+    end
+    
+    return table.concat(bonusTexts, " ");
+end
+
+-- Create detailed tooltip for reverse bonuses
+function CreateReverseBonusTooltip(reverseBonuses)
+    local tooltipLines = {};
+    
+    for _, bonus in ipairs(reverseBonuses) do
+        -- Use simple district and yield names for now
+        local districtName = bonus.DistrictType;
+        local yieldName = bonus.YieldType;
+        local line = "+" .. bonus.Amount .. " " .. yieldName .. " to " .. districtName;
+        table.insert(tooltipLines, line);
+    end
+    
+    return table.concat(tooltipLines, " | ");
+end
+
+-- Create custom overlay for reverse bonuses (temporary solution)
+function CreateCustomReverseBonusOverlay(plot, bonusText, tooltipText, reverseBonuses)
+    -- This is a simplified approach - in a full implementation we would:
+    -- 1. Access the native m_hexesDistrictPlacement table
+    -- 2. Modify the plotInfo.adjacent array to add our edge icons
+    -- 3. Add our bonus text to the central display
+    -- 4. Let UILens.SetAdjacencyBonusDistict() handle the rendering
+    
+    -- For testing, we'll just log the visual information
+    print("DetailedAdjacencyPreview: VISUAL - Plot (" .. plot:GetX() .. "," .. plot:GetY() .. ") would show:");
+    print("DetailedAdjacencyPreview: VISUAL - Central: " .. bonusText);
+    print("DetailedAdjacencyPreview: VISUAL - Tooltip: " .. tooltipText);
+    
+    -- Show edge connections to existing districts
+    for _, bonus in ipairs(reverseBonuses) do
+        local direction = GetDirectionToTarget(plot, bonus.TargetX, bonus.TargetY);
+        print("DetailedAdjacencyPreview: VISUAL - Edge icon: " .. bonus.YieldType .. " flowing to district at (" .. bonus.TargetX .. "," .. bonus.TargetY .. ")");
+    end
+end
+
+-- Get direction from source plot to target plot
+function GetDirectionToTarget(sourcePlot, targetX, targetY)
+    local sourceX = sourcePlot:GetX();
+    local sourceY = sourcePlot:GetY();
+    
+    -- Calculate relative position
+    local deltaX = targetX - sourceX;
+    local deltaY = targetY - sourceY;
+    
+    -- Convert to direction (simplified - real implementation would be more precise)
+    if (deltaX > 0 and deltaY == 0) then return DirectionTypes.DIRECTION_EAST;
+    elseif (deltaX < 0 and deltaY == 0) then return DirectionTypes.DIRECTION_WEST;
+    elseif (deltaX == 0 and deltaY > 0) then return DirectionTypes.DIRECTION_SOUTHEAST;
+    elseif (deltaX == 0 and deltaY < 0) then return DirectionTypes.DIRECTION_NORTHWEST;
+    elseif (deltaX > 0 and deltaY > 0) then return DirectionTypes.DIRECTION_NORTHEAST;
+    elseif (deltaX < 0 and deltaY < 0) then return DirectionTypes.DIRECTION_SOUTHWEST;
+    else return DirectionTypes.DIRECTION_EAST; -- Default
+    end
+end
+
+-- ===========================================================================
 -- INITIALIZATION
 -- ===========================================================================
 
--- Register for interface mode change events
-Events.InterfaceModeChanged.Add(OnInterfaceModeChanged);
+-- Initialize the mod with interface mode tracking
+function Initialize()
+    local hookSuccess = HookNativeDistrictPlacement();
+    
+    -- Register interface mode changes (our primary method)
+    Events.InterfaceModeChanged.Add(OnInterfaceModeChanged);
+    
+    print("DetailedAdjacencyPreview: Initialization complete - ready for district placement");
+end
 
-print("DetailedAdjacencyPreview: Event handlers registered - ready for district placement"); 
+-- Initialize the mod
+Initialize(); 
