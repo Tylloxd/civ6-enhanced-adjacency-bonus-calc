@@ -13,6 +13,99 @@ local g_selectedCity = nil;
 local g_compatibleTileSet = {}; -- Track which tiles are actually compatible for placement
 
 -- ===========================================================================
+-- DISTRICT PLACEMENT VALIDATION
+-- ===========================================================================
+
+-- Check if a plot is valid for placing a specific district type
+function IsPlotValidForDistrict(plot, districtInfo, city)
+    -- Basic checks that eliminate most invalid tiles
+    if (not plot or not districtInfo or not city) then
+        return false;
+    end
+    
+    -- Check if plot is already occupied by a district or city center
+    if (plot:IsCity() or CityManager.GetDistrictAt(plot) ~= nil) then
+        return false;
+    end
+    
+    -- Check if plot is water vs land requirements
+    if (plot:IsWater()) then
+        -- Only certain districts can be built on water (Harbor, etc.)
+        if (districtInfo.DistrictType ~= "DISTRICT_HARBOR" and 
+            districtInfo.DistrictType ~= "DISTRICT_ROYAL_NAVY_DOCKYARD") then -- Unique British Harbor
+            return false;
+        end
+        -- Water districts need to be coastal
+        if (not plot:IsCoastalLand() and not plot:IsWater()) then
+            return false;
+        end
+    else
+        -- Land districts cannot be built on water
+        if (districtInfo.DistrictType == "DISTRICT_HARBOR" or 
+            districtInfo.DistrictType == "DISTRICT_ROYAL_NAVY_DOCKYARD") then
+            return false;
+        end
+    end
+    
+    -- Check terrain restrictions for specific districts
+    local terrainType = plot:GetTerrainType();
+    local featureType = plot:GetFeatureType();
+    
+    -- Mountains cannot have districts (except Machu Picchu wonder, but that's not a district)
+    if (terrainType == GameInfo.Terrains["TERRAIN_SNOW_MOUNTAIN"] or 
+        terrainType == GameInfo.Terrains["TERRAIN_GRASS_MOUNTAIN"] or
+        terrainType == GameInfo.Terrains["TERRAIN_PLAINS_MOUNTAIN"] or
+        terrainType == GameInfo.Terrains["TERRAIN_DESERT_MOUNTAIN"] or
+        terrainType == GameInfo.Terrains["TERRAIN_TUNDRA_MOUNTAIN"]) then
+        return false;
+    end
+    
+    -- Aqueducts need fresh water access (this is complex to check properly)
+    if (districtInfo.DistrictType == "DISTRICT_AQUEDUCT") then
+        -- Simplified check: needs to be near river, lake, or mountain
+        if (not plot:IsRiver() and not plot:IsLake() and 
+            not IsAdjacentToFreshWater(plot) and not IsAdjacentToMountain(plot)) then
+            return false;
+        end
+    end
+    
+    -- Most other placement rules are complex and depend on game state
+    -- For now, if it passes these basic checks, consider it potentially valid
+    return true;
+end
+
+-- Helper function to check if plot is adjacent to fresh water
+function IsAdjacentToFreshWater(plot)
+    for direction = 0, DirectionTypes.NUM_DIRECTION_TYPES - 1, 1 do
+        local adjacentPlot = Map.GetAdjacentPlot(plot:GetX(), plot:GetY(), direction);
+        if (adjacentPlot) then
+            if (adjacentPlot:IsRiver() or adjacentPlot:IsLake()) then
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
+-- Helper function to check if plot is adjacent to mountain
+function IsAdjacentToMountain(plot)
+    for direction = 0, DirectionTypes.NUM_DIRECTION_TYPES - 1, 1 do
+        local adjacentPlot = Map.GetAdjacentPlot(plot:GetX(), plot:GetY(), direction);
+        if (adjacentPlot) then
+            local terrainType = adjacentPlot:GetTerrainType();
+            if (terrainType == GameInfo.Terrains["TERRAIN_SNOW_MOUNTAIN"] or 
+                terrainType == GameInfo.Terrains["TERRAIN_GRASS_MOUNTAIN"] or
+                terrainType == GameInfo.Terrains["TERRAIN_PLAINS_MOUNTAIN"] or
+                terrainType == GameInfo.Terrains["TERRAIN_DESERT_MOUNTAIN"] or
+                terrainType == GameInfo.Terrains["TERRAIN_TUNDRA_MOUNTAIN"]) then
+                return true;
+            end
+        end
+    end
+    return false;
+end
+
+-- ===========================================================================
 -- DISTRICT PLACEMENT INTEGRATION
 -- ===========================================================================
 
@@ -84,15 +177,27 @@ function CalculateReverseAdjacencyForAllTiles(districtInfo)
     
     local compatiblePlots = tResults[CityOperationResults.PLOTS];
     
-    -- CORRECTED: Use proper CityCommandTypes for purchasable tiles (found in game source)
+    -- Get purchasable tiles that are also valid for this specific district type
     local purchasableParameters = {};
     purchasableParameters[CityCommandTypes.PARAM_PLOT_PURCHASE] = UI.GetInterfaceModeParameter(CityCommandTypes.PARAM_PLOT_PURCHASE);
     
     local purchasableResults = CityManager.GetCommandTargets(selectedCity, CityCommandTypes.PURCHASE, purchasableParameters);
     if (purchasableResults and purchasableResults[CityCommandResults.PLOTS] and table.count(purchasableResults[CityCommandResults.PLOTS]) > 0) then
-        print("DetailedAdjacencyPreview: Found " .. #purchasableResults[CityCommandResults.PLOTS] .. " purchasable plots using correct CityCommandTypes!");
-        -- Add purchasable plots to our list
+        print("DetailedAdjacencyPreview: Found " .. #purchasableResults[CityCommandResults.PLOTS] .. " total purchasable plots");
+        
+        -- Filter purchasable plots to only include those suitable for this district type
+        local validPurchasablePlots = {};
         for i, plotID in ipairs(purchasableResults[CityCommandResults.PLOTS]) do
+            local plot = Map.GetPlotByIndex(plotID);
+            if (plot and IsPlotValidForDistrict(plot, districtInfo, selectedCity)) then
+                table.insert(validPurchasablePlots, plotID);
+            end
+        end
+        
+        print("DetailedAdjacencyPreview: Filtered to " .. #validPurchasablePlots .. " purchasable plots suitable for " .. districtInfo.DistrictType);
+        
+        -- Add valid purchasable plots to our list
+        for i, plotID in ipairs(validPurchasablePlots) do
             -- Only add if not already in the list
             local alreadyExists = false;
             for j, existingPlotID in ipairs(compatiblePlots) do
@@ -103,11 +208,11 @@ function CalculateReverseAdjacencyForAllTiles(districtInfo)
             end
             if (not alreadyExists) then
                 table.insert(compatiblePlots, plotID);
-                print("DetailedAdjacencyPreview: Added purchasable tile to compatible list: " .. plotID);
+                print("DetailedAdjacencyPreview: Added valid purchasable tile to compatible list: " .. plotID);
             end
         end
     else
-        print("DetailedAdjacencyPreview: No purchasable plots found with corrected CityCommandTypes");
+        print("DetailedAdjacencyPreview: No purchasable plots found");
     end
     
     -- Clear and populate the compatible tile set for fast lookup
@@ -280,7 +385,7 @@ function CalculateAdjacencyBonus(receivingDistrictInfo, givingDistrictInfo)
                     -- Add this bonus to the total
                     if (bonusApplies) then
                         totalBonus.Amount = totalBonus.Amount + yieldChange;
-                        totalBonus.YieldType = yieldType; -- Assume same yield type for now
+                        totalBonus.YieldType = yieldType; -- Most districts have single yield type per rule
                     end
                 end
             end
